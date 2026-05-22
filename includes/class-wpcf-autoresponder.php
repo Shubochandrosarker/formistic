@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Auto-Responder — emails a confirmation to the submitter after a successful
  * capture. Listens for the `WPISTIC_CF_submission_captured` action emitted by

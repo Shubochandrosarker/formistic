@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Multi-form builder — a lightweight CPT-backed form manager.
  *

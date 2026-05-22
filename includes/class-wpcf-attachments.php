@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Attachments — file uploads from the [wpistic_contact_form] shortcode and
  * attachment-reference capture from CF7, WPForms, Gravity & Fluent.

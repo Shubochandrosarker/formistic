@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Plugin orchestrator — wires the capture, shortcode, admin and AJAX layers.
  *

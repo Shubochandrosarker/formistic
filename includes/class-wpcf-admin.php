@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Admin UI — the "WPistic Contact" dashboard: inbox, view, reply, settings.
  *

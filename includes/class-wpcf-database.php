@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Database layer — table creation and submission/reply storage.
  *

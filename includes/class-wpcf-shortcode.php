@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * [wpistic_contact_form] shortcode — a branded, ready-to-use contact
  * form whose submissions land in the WPistic Contact dashboard.

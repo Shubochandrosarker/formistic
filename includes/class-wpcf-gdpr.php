@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * GDPR — consent enforcement on the bundled shortcode, WP Personal Data
  * Exporter & Eraser integration, and a daily auto-purge cron.

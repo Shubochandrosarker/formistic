@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Export — streams submissions to CSV or JSON. Driven by an admin-post
  * endpoint so the response can flush row-by-row without buffering everything

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Bulk actions — Mark New/Read/Replied, Delete, Export Selected as CSV/JSON.
  *

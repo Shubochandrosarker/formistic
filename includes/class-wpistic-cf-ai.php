@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * AI Layer for WPistic Contact Form (Phase 3 / v1.6.0).
  *

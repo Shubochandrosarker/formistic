@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Analytics — KPI tiles, 30-day daily bar chart and top-5 forms breakdown.
  * Renders the dashboard page registered as a submenu of WPistic Contact.

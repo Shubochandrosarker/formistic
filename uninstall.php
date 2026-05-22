@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Uninstall — remove plugin tables, options, and the protected attachment
  * storage directory.

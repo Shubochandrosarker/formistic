@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Webhooks — fans out a JSON POST to every configured URL whenever a
  * submission is captured. Compatible with Zapier, Make, n8n, and custom

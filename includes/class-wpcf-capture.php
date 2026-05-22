@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Submission capture — records form submissions from a configurable set of
  * sources (theme handlers, CF7, WPForms, Gravity, Fluent, wp_mail intercept,

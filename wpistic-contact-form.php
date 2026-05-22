@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Plugin Name:       WPistic Contact Form
  * Plugin URI:        https://www.wordpressistic.com/marketplace/plugins/wpistic-contact-form/

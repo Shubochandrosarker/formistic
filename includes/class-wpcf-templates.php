@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Reply Templates — saved canned replies the reply modal can pull from.
  *

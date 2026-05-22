@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * AJAX endpoints — view a submission, send a reply, change status, delete.
  *

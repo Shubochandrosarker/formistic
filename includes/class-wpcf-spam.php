@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Spam stack — reCAPTCHA v3, Cloudflare Turnstile, Akismet,
  * IP blocklist, per-IP rate limit.

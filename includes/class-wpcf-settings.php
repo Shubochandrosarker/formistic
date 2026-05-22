@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Settings — tabbed admin settings page (General / Captures / Spam /
  * Auto-Responder / Attachments).
