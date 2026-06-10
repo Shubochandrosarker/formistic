@@ -2,7 +2,7 @@
 
 WPistic Contact Form is a professional submission operations plugin for WordPress. It centralizes form capture, inbox management, replies, analytics, automation, and AI-assisted workflows in one admin experience.
 
-Plugin URL: https://www.wordpressistic.com/marketplace/plugins/wpistic-contact-form/
+Plugin URL: https://www.wordpressistic.com/marketplace/plugins/formistic/
 Website: https://www.wordpressistic.com
 
 ## Version
