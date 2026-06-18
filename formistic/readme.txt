@@ -4,7 +4,7 @@ Tags: contact form, form builder, wordpress, submissions, inbox, ai, spam protec
 Requires at least: 6.2
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.0.1
+Stable tag: 2.0.2
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -105,6 +105,11 @@ This plugin can connect to third-party services when enabled by the site adminis
 * Terms/Privacy: Depends on selected provider.
 
 == Changelog ==
+
+= 2.0.2 =
+* Fix: the form builder post type was 22 characters, over WordPress's 20-character limit, so it never registered ("Invalid post type"). Renamed it to `formistic_form` — the Form screen and builder now work.
+* Fix: contact submissions and newsletter sign-ups were not saved on sites that updated from an older release, because the v2.0.0 table rename meant the new tables were never created. The schema is now ensured on every request (admin, front end, AJAX, admin-post), so submissions and subscribers save reliably.
+* Note: data stored under the old table names from pre-2.0 builds is not migrated; new submissions and subscribers are recorded correctly going forward.
 
 = 2.0.1 =
 * Fix: the "Form" submenu (visual form builder) is now always available under the Formistic menu. The form CPT is attached explicitly so it no longer depends on menu registration timing.

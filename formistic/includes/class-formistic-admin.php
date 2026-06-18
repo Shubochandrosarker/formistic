@@ -206,7 +206,7 @@ class Wpistic_Formistic_Admin {
 		$is_form_screen = false;
 		if ( in_array( $hook, [ 'post.php', 'post-new.php', 'edit.php' ], true ) ) {
 			$screen         = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-			$is_form_screen = $screen && isset( $screen->post_type ) && 'wpistic_formistic_form' === $screen->post_type;
+			$is_form_screen = $screen && isset( $screen->post_type ) && Wpistic_Formistic_Forms::POST_TYPE === $screen->post_type;
 		}
 		if ( ! $is_plugin_page && ! $is_form_screen ) {
 			return;

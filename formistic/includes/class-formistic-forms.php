@@ -20,7 +20,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Wpistic_Formistic_Forms {
 
 	/** Post type slug. */
-	const POST_TYPE = 'wpistic_formistic_form';
+	/** Post type slug. Must stay ≤ 20 chars (WordPress limit). */
+	const POST_TYPE = 'formistic_form';
 
 	/** Capability required to manage forms. */
 	const CAP = 'manage_options';

@@ -93,9 +93,9 @@ foreach ( $options as $option ) {
 	delete_option( $option );
 }
 
-// Delete all custom forms (wpistic_formistic_form CPT) created by the builder.
+// Delete all custom forms (formistic_form CPT) created by the builder.
 $form_ids = $wpdb->get_col(
-	$wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_type = %s", 'wpistic_formistic_form' )
+	$wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_type = %s", 'formistic_form' )
 );
 foreach ( (array) $form_ids as $fid ) {
 	wp_delete_post( (int) $fid, true );
