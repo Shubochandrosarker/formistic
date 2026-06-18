@@ -1,72 +1,71 @@
-# WPistic Contact Form
+# Formistic — Development Repository
 
-WPistic Contact Form is a professional submission operations plugin for WordPress. It centralizes form capture, inbox management, replies, analytics, automation, and AI-assisted workflows in one admin experience.
+This is the **development** repository for **Formistic**, the smart contact-form
+and submission-operations plugin for WordPress, published by **Wordpressistic**.
 
-Plugin URL: https://www.wordpressistic.com/marketplace/plugins/formistic/
-Website: https://www.wordpressistic.com
+Everything needed to develop, document, and package the plugin lives here. The
+**public release** repository
+([`Wordpressistic/Formistic`](https://github.com/Wordpressistic/Formistic))
+contains **only** the installable plugin — none of the development docs or
+tooling below.
 
-## Version
-- Current release: `1.0.0`
-- WordPress tested up to: `6.9`
-- PHP requirement: `7.4+`
+## Repository layout
 
-## Core Features
-- Unified submission inbox with status lifecycle (`new`, `read`, `replied`)
-- Multi-source capture pipeline
-- Reply composer with templates, quote-original, CC/BCC, and signature
-- Spam prevention stack: honeypot, reCAPTCHA v3, Turnstile, Akismet, IP blocklist, rate limit
-- Protected attachments and authenticated download flow
-- Bulk actions and CSV/JSON export
-- GDPR consent/export/erase/retention workflow
-- Webhooks with optional HMAC signing and replay controls
-- Analytics with SLA and conversion metrics
-- AI & Automation module with trainable context and smart rule engine
+```
+.
+├── formistic/        ← the plugin (this folder IS the public release)
+│   ├── formistic.php          Plugin bootstrap + constants
+│   ├── uninstall.php          Clean uninstall
+│   ├── readme.txt             WordPress.org-style readme (source of truth)
+│   ├── README.md              Public-facing readme
+│   ├── LICENSE                GPL-2.0+
+│   ├── assets/                Admin + frontend CSS/JS
+│   ├── includes/              Core PHP modules
+│   └── languages/             Translation template (.pot)
+├── docs/             ← development docs (NOT published)
+│   ├── USER-GUIDE.md
+│   ├── PLUGIN-WORKFLOW.md
+│   ├── AI-MODEL-VALIDATION.md
+│   └── Formistic-User-Guide-v1.5.2.pdf
+├── build.sh          ← produces the publishable zip / dist folder
+└── README.md         ← you are here (development readme)
+```
 
-## AI & Automation Highlights
-- Smart reply draft generation
-- AI spam scoring (0-100)
-- Smart tagging for triage
-- Auto-reply rule engine: `keyword => template`
-- Training inputs:
-  - FAQ text
-  - Knowledge base text
-  - Google Sheets published URLs
-  - Plain text URL/file sources
-- Free connection modes:
-  - Local rules (no API)
-  - Ollama
-  - OpenRouter routes
-  - HuggingFace endpoint
-  - Custom endpoint
+## What gets published
 
-## Plugin Structure
-- `wpistic-contact-form.php` - bootstrap and constants
-- `includes/` - core modules
-- `assets/` - admin/frontend assets
-- `languages/` - translation files
-- `readme.txt` - WordPress.org readme
-- `USER-GUIDE.md` - practical usage manual
+When releasing to `Wordpressistic/Formistic`, publish **only the contents of the
+`formistic/` folder**. Nothing else in this repository (this README, `docs/`,
+`build.sh`, `.git*`, CI, or any AI/assistant files) should be made public.
 
-## Working Process
-1. Form submission is captured.
-2. Spam/security validation is applied.
-3. Submission is stored in inbox tables.
-4. Optional notifications/webhooks are dispatched.
-5. AI layer enriches with score/tags/draft.
-6. Team reviews, replies, and tracks SLA.
-7. Export/reporting and retention policies run as configured.
+The simplest way to produce a clean release artifact:
 
-Detailed implementation process is documented in `docs/PLUGIN-WORKFLOW.md`.
+```bash
+./build.sh
+```
 
-## Installation
-1. Upload plugin folder to `/wp-content/plugins/` or upload ZIP.
-2. Activate plugin in wp-admin.
-3. Open `WPistic Contact` and configure settings tabs.
-4. Add shortcode `[wpistic_contact_form]` or `[wpistic_form id="N"]`.
+This creates:
 
-## Publishing Notes
-- WP.org-focused metadata and disclosures are maintained in `readme.txt`.
-- This repository includes production-ready docs and release packaging.
+- `dist/formistic/` — a clean copy of the plugin folder
+- `dist/formistic-<version>.zip` — ready to upload via **Plugins → Add New →
+  Upload Plugin**, or to commit to the public repository
 
-## License
-GPL-2.0+
+The version is read automatically from `formistic/formistic.php`.
+
+## Current release
+
+- **Version:** `1.5.2`
+- **Requires WordPress:** `6.2+`
+- **Tested up to:** `6.9`
+- **Requires PHP:** `7.4+`
+- **License:** GPL-2.0+
+
+## Development notes
+
+- All plugin code uses the `WPISTIC_CF_` class/constant prefix and the
+  `formistic` text domain.
+- Stored options, database tables, hooks, AJAX actions, and shortcodes are kept
+  backward compatible — do not rename them without a migration.
+- Newsletter sign-ups are stored in the dedicated subscribers table (Newsletter
+  tab); contact submissions are stored in the inbox table. These paths are
+  intentionally separate.
+- Run `php -l` on changed files before committing; the plugin targets PHP 7.4+.

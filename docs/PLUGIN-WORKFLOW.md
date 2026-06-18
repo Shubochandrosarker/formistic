@@ -20,7 +20,7 @@ Core records include:
 - operational status
 
 ## 4. Operator Workflow
-From `WPistic Contact` admin screen:
+From `Formistic` admin screen:
 1. Filter by status/form/search
 2. Open detail modal
 3. Review sender, fields, files, timeline
