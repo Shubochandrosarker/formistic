@@ -194,18 +194,37 @@ class Wpistic_Formistic_Admin {
 	}
 
 	/**
-	 * Read the admin stylesheet once for inline output.
+	 * Read an admin asset file once for inline output.
 	 *
-	 * @return string CSS contents, or '' if unreadable.
+	 * @param string $relative Path relative to the plugin root.
+	 * @return string File contents, or '' if unreadable.
+	 */
+	protected static function inline_asset( $relative ) {
+		static $cache = [];
+		if ( array_key_exists( $relative, $cache ) ) {
+			return $cache[ $relative ];
+		}
+		$file              = WPISTIC_FORMISTIC_PATH . $relative;
+		$cache[ $relative ] = is_readable( $file ) ? (string) file_get_contents( $file ) : ''; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		return $cache[ $relative ];
+	}
+
+	/**
+	 * Admin stylesheet contents for inline output.
+	 *
+	 * @return string
 	 */
 	protected static function inline_css() {
-		static $css = null;
-		if ( null !== $css ) {
-			return $css;
-		}
-		$file = WPISTIC_FORMISTIC_PATH . 'assets/admin.css';
-		$css  = is_readable( $file ) ? (string) file_get_contents( $file ) : ''; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-		return $css;
+		return self::inline_asset( 'assets/admin.css' );
+	}
+
+	/**
+	 * Admin script contents for inline output.
+	 *
+	 * @return string
+	 */
+	protected static function inline_js() {
+		return self::inline_asset( 'assets/admin.js' );
 	}
 
 	/**
@@ -238,7 +257,15 @@ class Wpistic_Formistic_Admin {
 		} else {
 			wp_enqueue_style( 'wpistic-formistic-admin', WPISTIC_FORMISTIC_URL . 'assets/admin.css', [], WPISTIC_FORMISTIC_VERSION );
 		}
-		wp_enqueue_script( 'wpistic-formistic-admin', WPISTIC_FORMISTIC_URL . 'assets/admin.js', [], WPISTIC_FORMISTIC_VERSION, true );
+		// Print the admin script inline too, for the same reason — so form
+		// optimizers / deferral can't break the dashboard's buttons.
+		$js = self::inline_js();
+		if ( '' !== $js ) {
+			wp_register_script( 'wpistic-formistic-admin', false, [], WPISTIC_FORMISTIC_VERSION, true );
+			wp_enqueue_script( 'wpistic-formistic-admin' );
+		} else {
+			wp_enqueue_script( 'wpistic-formistic-admin', WPISTIC_FORMISTIC_URL . 'assets/admin.js', [], WPISTIC_FORMISTIC_VERSION, true );
+		}
 		wp_localize_script(
 			'wpistic-formistic-admin',
 			'Wpistic_Formistic',
@@ -267,6 +294,10 @@ class Wpistic_Formistic_Admin {
 				],
 			]
 		);
+		if ( '' !== $js ) {
+			// Runs after the localized data, so window.Wpistic_Formistic is set.
+			wp_add_inline_script( 'wpistic-formistic-admin', $js );
+		}
 	}
 
 	/**
