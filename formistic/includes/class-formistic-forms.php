@@ -66,6 +66,12 @@ class Wpistic_Formistic_Forms {
 		add_action( 'admin_post_wpistic_formistic_submit_form',        [ $this, 'handle_submit' ] );
 		add_action( 'admin_post_nopriv_wpistic_formistic_submit_form', [ $this, 'handle_submit' ] );
 
+		// The Form submenu is added explicitly in Wpistic_Formistic_Admin::menu()
+		// (show_in_menu is false), so keep the parent menu + submenu highlighted
+		// while editing or adding a form.
+		add_filter( 'parent_file', [ $this, 'highlight_parent' ] );
+		add_filter( 'submenu_file', [ $this, 'highlight_submenu' ] );
+
 		// Custom column on the WP forms list table.
 		add_filter( 'manage_' . self::POST_TYPE . '_posts_columns',       [ $this, 'list_columns' ] );
 		add_action( 'manage_' . self::POST_TYPE . '_posts_custom_column', [ $this, 'list_column_value' ], 10, 2 );
@@ -95,13 +101,43 @@ class Wpistic_Formistic_Forms {
 			],
 			'public'             => false,
 			'show_ui'            => true,
-			'show_in_menu'       => 'formistic',
+			// The submenu is registered explicitly under the Formistic menu in
+			// Wpistic_Formistic_Admin::menu(); false avoids the timing issue
+			// where a string parent menu may not exist yet on attach.
+			'show_in_menu'       => false,
 			'show_in_rest'       => false,
 			'supports'           => [ 'title' ],
 			'capability_type'    => 'post',
 			'map_meta_cap'       => true,
-			'menu_position'      => 27,
 		] );
+	}
+
+	/**
+	 * Keep the top-level Formistic menu open while on a form screen.
+	 *
+	 * @param string $parent_file Current parent file.
+	 * @return string
+	 */
+	public function highlight_parent( $parent_file ) {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( $screen && isset( $screen->post_type ) && self::POST_TYPE === $screen->post_type ) {
+			return Wpistic_Formistic_Admin::PAGE;
+		}
+		return $parent_file;
+	}
+
+	/**
+	 * Keep the "Form" submenu highlighted while on a form screen.
+	 *
+	 * @param string $submenu_file Current submenu file.
+	 * @return string
+	 */
+	public function highlight_submenu( $submenu_file ) {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( $screen && isset( $screen->post_type ) && self::POST_TYPE === $screen->post_type ) {
+			return 'edit.php?post_type=' . self::POST_TYPE;
+		}
+		return $submenu_file;
 	}
 
 	/**

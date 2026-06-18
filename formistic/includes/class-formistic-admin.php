@@ -21,6 +21,15 @@ class Wpistic_Formistic_Admin {
 	const CAP = 'manage_options';
 
 	/**
+	 * Page-hook suffixes for every Formistic admin screen. Populated as menus
+	 * register (here plus Addons / Newsletter) so assets() can enqueue on the
+	 * exact hooks instead of guessing from the hook name.
+	 *
+	 * @var string[]
+	 */
+	public static $page_hooks = [];
+
+	/**
 	 * Register admin hooks.
 	 */
 	public function register() {
@@ -94,7 +103,7 @@ class Wpistic_Formistic_Admin {
 			? ' <span class="awaiting-mod">' . (int) $counts['new'] . '</span>'
 			: '';
 
-		add_menu_page(
+		self::$page_hooks[] = add_menu_page(
 			__( 'Formistic', 'formistic' ),
 			__( 'Formistic', 'formistic' ) . $bubble,
 			self::CAP,
@@ -104,7 +113,7 @@ class Wpistic_Formistic_Admin {
 			26
 		);
 
-		add_submenu_page(
+		self::$page_hooks[] = add_submenu_page(
 			self::PAGE,
 			__( 'Inbox', 'formistic' ),
 			__( 'Inbox', 'formistic' ),
@@ -112,7 +121,7 @@ class Wpistic_Formistic_Admin {
 			self::PAGE,
 			[ $this, 'render_inbox' ]
 		);
-		add_submenu_page(
+		self::$page_hooks[] = add_submenu_page(
 			self::PAGE,
 			__( 'Threads', 'formistic' ),
 			__( 'Threads', 'formistic' ),
@@ -121,7 +130,17 @@ class Wpistic_Formistic_Admin {
 			[ $this, 'render_threads_proxy' ]
 		);
 
-		add_submenu_page(
+		// Form builder — explicit link to the CPT list (the CPT itself uses
+		// show_in_menu=false to avoid the string-parent attach timing issue).
+		self::$page_hooks[] = add_submenu_page(
+			self::PAGE,
+			__( 'Forms', 'formistic' ),
+			__( 'Form', 'formistic' ),
+			self::CAP,
+			'edit.php?post_type=' . Wpistic_Formistic_Forms::POST_TYPE
+		);
+
+		self::$page_hooks[] = add_submenu_page(
 			self::PAGE,
 			__( 'Analytics', 'formistic' ),
 			__( 'Analytics', 'formistic' ),
@@ -130,7 +149,7 @@ class Wpistic_Formistic_Admin {
 			[ $this, 'render_analytics_proxy' ]
 		);
 
-		add_submenu_page(
+		self::$page_hooks[] = add_submenu_page(
 			self::PAGE,
 			__( 'Settings', 'formistic' ),
 			__( 'Settings', 'formistic' ),
@@ -180,8 +199,10 @@ class Wpistic_Formistic_Admin {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function assets( $hook ) {
-		// Load on every plugin admin page AND on the form CPT edit screens.
-		$is_plugin_page = false !== strpos( (string) $hook, self::PAGE );
+		// Load on every Formistic admin page (matched by exact captured hook
+		// OR by name as a fallback) AND on the form CPT add/edit/list screens.
+		$is_plugin_page = in_array( $hook, self::$page_hooks, true )
+			|| false !== strpos( (string) $hook, self::PAGE );
 		$is_form_screen = false;
 		if ( in_array( $hook, [ 'post.php', 'post-new.php', 'edit.php' ], true ) ) {
 			$screen         = function_exists( 'get_current_screen' ) ? get_current_screen() : null;

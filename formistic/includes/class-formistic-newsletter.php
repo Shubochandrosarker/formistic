@@ -322,7 +322,7 @@ class Wpistic_Formistic_Newsletter {
 	 * Admin: register the Newsletter submenu under Formistic.
 	 */
 	public static function register_admin_page() {
-		add_submenu_page(
+		$hook = add_submenu_page(
 			Wpistic_Formistic_Admin::PAGE,
 			__( 'Newsletter', 'formistic' ),
 			__( 'Newsletter', 'formistic' ),
@@ -330,6 +330,7 @@ class Wpistic_Formistic_Newsletter {
 			self::PAGE,
 			[ __CLASS__, 'render_admin_page' ]
 		);
+		Wpistic_Formistic_Admin::$page_hooks[] = $hook;
 	}
 
 	/**

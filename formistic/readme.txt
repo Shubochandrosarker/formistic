@@ -4,7 +4,7 @@ Tags: contact form, form builder, wordpress, submissions, inbox, ai, spam protec
 Requires at least: 6.2
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -105,6 +105,11 @@ This plugin can connect to third-party services when enabled by the site adminis
 * Terms/Privacy: Depends on selected provider.
 
 == Changelog ==
+
+= 2.0.1 =
+* Fix: the "Form" submenu (visual form builder) is now always available under the Formistic menu. The form CPT is attached explicitly so it no longer depends on menu registration timing.
+* Fix: admin styles now load reliably on the Settings and Addons screens by enqueueing on the exact page hooks (with a version bump to bust cached CSS).
+* The form add/edit screens keep the Formistic → Form menu highlighted.
 
 = 2.0.0 =
 * New: modular Addons screen with card-based on/off toggles for Form Captures, Spam Protection, Auto Responder, Webhooks, Reply Templates, AI Automation, and Newsletter. Features (and their settings tabs / submenus) load only when enabled.

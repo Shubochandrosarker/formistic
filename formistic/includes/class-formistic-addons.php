@@ -117,7 +117,7 @@ class Wpistic_Formistic_Addons {
 	 * Add the Addons submenu.
 	 */
 	public function menu() {
-		add_submenu_page(
+		$hook = add_submenu_page(
 			Wpistic_Formistic_Admin::PAGE,
 			__( 'Addons', 'formistic' ),
 			__( 'Addons', 'formistic' ),
@@ -125,6 +125,7 @@ class Wpistic_Formistic_Addons {
 			self::PAGE,
 			[ $this, 'render' ]
 		);
+		Wpistic_Formistic_Admin::$page_hooks[] = $hook;
 	}
 
 	/**
