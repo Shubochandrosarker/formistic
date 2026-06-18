@@ -480,6 +480,22 @@ class Wpistic_Formistic_Capture {
 
 		$ip = class_exists( 'Wpistic_Formistic_Spam' ) ? Wpistic_Formistic_Spam::client_ip() : $this->client_ip_fallback();
 
+		// De-duplication — drop an identical submission captured moments ago
+		// (double-clicks, page refresh, or the same payload arriving via two
+		// hooks). Returns the original submission ID so the caller still sees
+		// success but no second row is written. Window is filterable.
+		$window = (int) apply_filters( 'wpistic_formistic_dedupe_seconds', 60, $form_name, $fields );
+		$dedupe_key = '';
+		if ( $window > 0 ) {
+			$dedupe_key = 'wpf_dedupe_' . md5( $form_name . '|' . (string) $ip . '|' . wp_json_encode( $fields ) );
+			$prior = get_transient( $dedupe_key );
+			if ( false !== $prior ) {
+				return (int) $prior;
+			}
+			// Reserve the key immediately so concurrent requests can't both pass.
+			set_transient( $dedupe_key, 0, $window );
+		}
+
 		// Spam gate.
 		if ( class_exists( 'Wpistic_Formistic_Spam' ) ) {
 			$check = Wpistic_Formistic_Spam::pre_store_check( $form_name, $fields, $ip, $email );
@@ -492,6 +508,9 @@ class Wpistic_Formistic_Capture {
 				 * @param array    $fields    Captured fields.
 				 */
 				do_action( 'wpistic_formistic_submission_blocked', $check, $form_name, $fields );
+				if ( '' !== $dedupe_key ) {
+					delete_transient( $dedupe_key );
+				}
 				return 0;
 			}
 		}
@@ -510,6 +529,12 @@ class Wpistic_Formistic_Capture {
 
 		if ( $id ) {
 			self::$last_submission_id = $id;
+			// Record the real ID against the dedupe key so an identical retry
+			// within the window resolves to this submission instead of storing
+			// a duplicate.
+			if ( '' !== $dedupe_key ) {
+				set_transient( $dedupe_key, (int) $id, $window );
+			}
 			/**
 			 * Fires after a submission is captured.
 			 *
@@ -522,6 +547,9 @@ class Wpistic_Formistic_Capture {
 			if ( $notify_admin ) {
 				$this->notify_admin( $id, $form_name, $fields );
 			}
+		} elseif ( '' !== $dedupe_key ) {
+			// Insert failed — release the reservation so a retry isn't blocked.
+			delete_transient( $dedupe_key );
 		}
 
 		return $id;
