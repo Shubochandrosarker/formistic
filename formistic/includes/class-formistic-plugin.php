@@ -35,6 +35,12 @@ final class Wpistic_Formistic_Plugin {
 	public function boot() {
 		load_plugin_textdomain( 'formistic', false, dirname( WPISTIC_FORMISTIC_BASENAME ) . '/languages' );
 
+		// Ensure the schema is current on every entry point (admin, front end,
+		// AJAX, admin-post). This is a single option read unless the stored DB
+		// version is stale — which also covers sites updating from an older
+		// release whose tables used a different name prefix.
+		Wpistic_Formistic_Database::maybe_upgrade();
+
 		// Always-on core: inbox capture pipeline, built-in forms, attachments, GDPR.
 		( new Wpistic_Formistic_Capture() )->register();
 		( new Wpistic_Formistic_Shortcode() )->register();
