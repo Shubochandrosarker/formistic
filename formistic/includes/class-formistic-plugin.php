@@ -47,6 +47,7 @@ final class Wpistic_Formistic_Plugin {
 		( new Wpistic_Formistic_Forms() )->register();
 		( new Wpistic_Formistic_Attachments() )->register();
 		( new Wpistic_Formistic_Gdpr() )->register();
+		( new Wpistic_Formistic_API() )->register();
 
 		// Optional feature modules — gated by the Addons screen.
 		if ( Wpistic_Formistic_Addons::is_active( 'autoresponder' ) ) {

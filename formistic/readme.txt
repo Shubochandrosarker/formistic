@@ -4,7 +4,7 @@ Tags: contact form, form builder, wordpress, submissions, inbox, ai, spam protec
 Requires at least: 6.2
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.0.2
+Stable tag: 2.0.3
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -105,6 +105,13 @@ This plugin can connect to third-party services when enabled by the site adminis
 * Terms/Privacy: Depends on selected provider.
 
 == Changelog ==
+
+= 2.0.3 =
+* New: connect ANY existing form (custom contact forms, custom newsletter sign-ups, theme forms, or other plugins) to the Formistic dashboard.
+* New: no-code catch-all — the renamed "Any form that sends email (catch-all)" capture option records submissions from any form that emails you.
+* New: developer API — `formistic_capture_contact()` and `formistic_add_subscriber()` helper functions, plus `formistic_capture` / `formistic_subscribe` action hooks.
+* New: REST endpoint `POST /wp-json/formistic/v1/capture` for JavaScript / headless contact forms (newsletter REST endpoint already existed).
+* The Captures settings screen now explains how to connect your own forms.
 
 = 2.0.2 =
 * Fix: the form builder post type was 22 characters, over WordPress's 20-character limit, so it never registered ("Invalid post type"). Renamed it to `formistic_form` — the Form screen and builder now work.
