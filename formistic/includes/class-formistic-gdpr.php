@@ -3,7 +3,7 @@
  * GDPR — consent enforcement on the bundled shortcode, WP Personal Data
  * Exporter & Eraser integration, and a daily auto-purge cron.
  *
- * @package WPISTIC_CF
+ * @package Wpistic_Formistic
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -13,10 +13,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * GDPR helpers.
  */
-class WPISTIC_CF_Gdpr {
+class Wpistic_Formistic_Gdpr {
 
 	/** Cron hook name. */
-	const CRON_HOOK = 'WPISTIC_CF_daily_cleanup';
+	const CRON_HOOK = 'wpistic_formistic_daily_cleanup';
 
 	/**
 	 * Register hooks.
@@ -37,7 +37,7 @@ class WPISTIC_CF_Gdpr {
 	 * @return bool
 	 */
 	public static function consent_enabled() {
-		return '1' === get_option( 'WPISTIC_CF_gdpr_consent_enabled', '0' );
+		return '1' === get_option( 'wpistic_formistic_gdpr_consent_enabled', '0' );
 	}
 
 	/**
@@ -46,7 +46,7 @@ class WPISTIC_CF_Gdpr {
 	 * @return bool
 	 */
 	public static function consent_required() {
-		return '1' === get_option( 'WPISTIC_CF_gdpr_required', '1' );
+		return '1' === get_option( 'wpistic_formistic_gdpr_required', '1' );
 	}
 
 	/**
@@ -56,7 +56,7 @@ class WPISTIC_CF_Gdpr {
 	 */
 	public static function consent_text() {
 		$default = __( 'I agree to the processing of my personal data as described in the privacy policy.', 'formistic' );
-		return (string) get_option( 'WPISTIC_CF_gdpr_consent_text', $default );
+		return (string) get_option( 'wpistic_formistic_gdpr_consent_text', $default );
 	}
 
 	/**
@@ -116,8 +116,8 @@ class WPISTIC_CF_Gdpr {
 		$items = [];
 
 		if ( 1 === $page ) {
-			foreach ( WPISTIC_CF_Database::ids_by_email( $email_address ) as $id ) {
-				$row    = WPISTIC_CF_Database::get_submission( $id );
+			foreach ( Wpistic_Formistic_Database::ids_by_email( $email_address ) as $id ) {
+				$row    = Wpistic_Formistic_Database::get_submission( $id );
 				if ( ! $row ) {
 					continue;
 				}
@@ -143,7 +143,7 @@ class WPISTIC_CF_Gdpr {
 				$items[] = [
 					'group_id'    => 'formistic',
 					'group_label' => __( 'Formistic Submissions', 'formistic' ),
-					'item_id'     => 'WPISTIC_CF-submission-' . (int) $row->id,
+					'item_id'     => 'wpistic-formistic-submission-' . (int) $row->id,
 					'data'        => $data,
 				];
 			}
@@ -167,9 +167,9 @@ class WPISTIC_CF_Gdpr {
 		$items_retained = false;
 		$messages       = [];
 
-		$ids = WPISTIC_CF_Database::ids_by_email( $email_address );
+		$ids = Wpistic_Formistic_Database::ids_by_email( $email_address );
 		foreach ( $ids as $id ) {
-			if ( WPISTIC_CF_Database::delete_submission( $id ) ) {
+			if ( Wpistic_Formistic_Database::delete_submission( $id ) ) {
 				$items_removed = true;
 			} else {
 				$items_retained = true;
@@ -215,13 +215,13 @@ class WPISTIC_CF_Gdpr {
 	 * Cron callback — purge old submissions if auto-purge is enabled.
 	 */
 	public function daily_cleanup() {
-		if ( '1' !== get_option( 'WPISTIC_CF_gdpr_autopurge_enabled', '0' ) ) {
+		if ( '1' !== get_option( 'wpistic_formistic_gdpr_autopurge_enabled', '0' ) ) {
 			return;
 		}
-		$days = (int) get_option( 'WPISTIC_CF_gdpr_autopurge_days', 365 );
+		$days = (int) get_option( 'wpistic_formistic_gdpr_autopurge_days', 365 );
 		if ( $days < 1 ) {
 			return;
 		}
-		WPISTIC_CF_Database::purge_older_than( $days );
+		Wpistic_Formistic_Database::purge_older_than( $days );
 	}
 }

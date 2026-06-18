@@ -2,11 +2,11 @@
 /**
  * Newsletter — email-list capture, admin list table, and CSV export.
  *
- * Wires the footer "GET RANGE UPDATES" form (and any [wpcf_newsletter]
+ * Wires the footer "GET RANGE UPDATES" form (and any [wpistic_formistic_newsletter]
  * shortcode placement) to a dedicated subscribers table so the client
  * can see and export their list from a single dashboard tab.
  *
- * @package WPISTIC_CF
+ * @package Wpistic_Formistic
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -16,19 +16,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Newsletter capture + admin list + CSV export.
  */
-class WPISTIC_CF_Newsletter {
+class Wpistic_Formistic_Newsletter {
 
 	/** Subscribers table name (without prefix). */
-	const TABLE = 'WPISTIC_CF_subscribers';
+	const TABLE = 'wpistic_formistic_subscribers';
 
 	/** Admin page slug under the Formistic menu. */
-	const PAGE = 'wpistic-contact-newsletter';
+	const PAGE = 'formistic-newsletter';
 
 	/** AJAX action used by the public form. */
-	const ACTION = 'wpcf_newsletter_subscribe';
+	const ACTION = 'wpistic_formistic_newsletter_subscribe';
 
 	/** Nonce action used for both public subscribe + admin export/unsubscribe. */
-	const NONCE = 'wpcf_newsletter';
+	const NONCE = 'wpistic_formistic_newsletter';
 
 	/** Per-IP throttle window (seconds). */
 	const THROTTLE = 60;
@@ -51,8 +51,8 @@ class WPISTIC_CF_Newsletter {
 		// uses the WP REST nonce (works alongside ajax-url path).
 		add_action( 'rest_api_init', [ __CLASS__, 'register_rest' ] );
 
-		// Shortcode for in-content placement, e.g. [wpcf_newsletter].
-		add_shortcode( 'wpcf_newsletter', [ __CLASS__, 'shortcode' ] );
+		// Shortcode for in-content placement, e.g. [wpistic_formistic_newsletter].
+		add_shortcode( 'wpistic_formistic_newsletter', [ __CLASS__, 'shortcode' ] );
 
 		// Register the front-end submit handler for the shortcode form.
 		add_action( 'wp_enqueue_scripts', [ __CLASS__, 'register_assets' ] );
@@ -61,12 +61,12 @@ class WPISTIC_CF_Newsletter {
 		// `*_newsletter` checkbox (e.g. the theme contact page's
 		// `g2a_f_newsletter` field). Looks for any captured field whose
 		// name ends with `_newsletter` and is truthy.
-		add_action( 'WPISTIC_CF_submission_captured', [ __CLASS__, 'maybe_subscribe_from_form' ], 10, 3 );
+		add_action( 'wpistic_formistic_submission_captured', [ __CLASS__, 'maybe_subscribe_from_form' ], 10, 3 );
 
 		if ( is_admin() ) {
 			add_action( 'admin_menu', [ __CLASS__, 'register_admin_page' ], 20 );
-			add_action( 'admin_post_wpcf_newsletter_export',      [ __CLASS__, 'handle_export' ] );
-			add_action( 'admin_post_wpcf_newsletter_unsubscribe', [ __CLASS__, 'handle_admin_unsubscribe' ] );
+			add_action( 'admin_post_wpistic_formistic_newsletter_export',      [ __CLASS__, 'handle_export' ] );
+			add_action( 'admin_post_wpistic_formistic_newsletter_unsubscribe', [ __CLASS__, 'handle_admin_unsubscribe' ] );
 		}
 	}
 
@@ -137,7 +137,7 @@ class WPISTIC_CF_Newsletter {
 	 * Register the REST mirror of the subscribe endpoint.
 	 */
 	public static function register_rest() {
-		register_rest_route( 'wpcf/v1', '/newsletter', [
+		register_rest_route( 'formistic/v1', '/newsletter', [
 			'methods'             => 'POST',
 			'callback'            => [ __CLASS__, 'rest_subscribe' ],
 			// Public endpoint: gated by the wp REST nonce (X-WP-Nonce header
@@ -202,7 +202,7 @@ class WPISTIC_CF_Newsletter {
 
 		// Per-IP throttle — stops a single visitor from flooding the form.
 		$ip  = self::client_ip();
-		$key = 'wpcf_nl_' . md5( $ip );
+		$key = 'wpistic_formistic_nl_' . md5( $ip );
 		if ( get_transient( $key ) ) {
 			return [
 				'status'  => 'throttled',
@@ -236,7 +236,7 @@ class WPISTIC_CF_Newsletter {
 				],
 				[ 'id' => (int) $existing->id ]
 			);
-			do_action( 'wpcf_newsletter_resubscribed', $email, $source );
+			do_action( 'wpistic_formistic_newsletter_resubscribed', $email, $source );
 		} else {
 			$wpdb->insert( $table, [
 				'email'      => $email,
@@ -247,7 +247,7 @@ class WPISTIC_CF_Newsletter {
 				'status'     => 'active',
 				'consent_at' => current_time( 'mysql' ),
 			] );
-			do_action( 'wpcf_newsletter_subscribed', $email, $source, (int) $wpdb->insert_id );
+			do_action( 'wpistic_formistic_newsletter_subscribed', $email, $source, (int) $wpdb->insert_id );
 		}
 
 		return [
@@ -277,13 +277,13 @@ class WPISTIC_CF_Newsletter {
 	 */
 	public static function register_assets() {
 		wp_register_script(
-			'wpcf-newsletter',
-			WPISTIC_CF_URL . 'assets/newsletter.js',
+			'wpistic-formistic-newsletter',
+			WPISTIC_FORMISTIC_URL . 'assets/newsletter.js',
 			[],
-			WPISTIC_CF_VERSION,
+			WPISTIC_FORMISTIC_VERSION,
 			true
 		);
-		wp_localize_script( 'wpcf-newsletter', 'WPISTIC_CF_NL', [
+		wp_localize_script( 'wpistic-formistic-newsletter', 'Wpistic_Formistic_NL', [
 			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 			'nonce'   => wp_create_nonce( self::NONCE ),
 			'i18n'    => [
@@ -303,16 +303,16 @@ class WPISTIC_CF_Newsletter {
 			'source'      => 'shortcode',
 			'placeholder' => __( 'your@email.com', 'formistic' ),
 			'button'      => __( 'Subscribe', 'formistic' ),
-		], $atts, 'wpcf_newsletter' );
+		], $atts, 'wpistic_formistic_newsletter' );
 
-		wp_enqueue_script( 'wpcf-newsletter' );
+		wp_enqueue_script( 'wpistic-formistic-newsletter' );
 
 		ob_start();
 		?>
-		<form class="wpcf-newsletter" data-source="<?php echo esc_attr( $atts['source'] ); ?>">
+		<form class="wpistic-formistic-newsletter" data-source="<?php echo esc_attr( $atts['source'] ); ?>">
 			<input type="email" name="email" required placeholder="<?php echo esc_attr( $atts['placeholder'] ); ?>">
 			<button type="submit"><?php echo esc_html( $atts['button'] ); ?></button>
-			<span class="wpcf-newsletter-status" role="status" aria-live="polite"></span>
+			<span class="wpistic-formistic-newsletter-status" role="status" aria-live="polite"></span>
 		</form>
 		<?php
 		return ob_get_clean();
@@ -323,10 +323,10 @@ class WPISTIC_CF_Newsletter {
 	 */
 	public static function register_admin_page() {
 		add_submenu_page(
-			WPISTIC_CF_Admin::PAGE,
+			Wpistic_Formistic_Admin::PAGE,
 			__( 'Newsletter', 'formistic' ),
 			__( 'Newsletter', 'formistic' ),
-			WPISTIC_CF_Admin::CAP,
+			Wpistic_Formistic_Admin::CAP,
 			self::PAGE,
 			[ __CLASS__, 'render_admin_page' ]
 		);
@@ -336,7 +336,7 @@ class WPISTIC_CF_Newsletter {
 	 * Admin: render the subscriber list + filters + export button.
 	 */
 	public static function render_admin_page() {
-		if ( ! current_user_can( WPISTIC_CF_Admin::CAP ) ) {
+		if ( ! current_user_can( Wpistic_Formistic_Admin::CAP ) ) {
 			wp_die( esc_html__( 'You do not have permission to view this page.', 'formistic' ) );
 		}
 		global $wpdb;
@@ -377,8 +377,8 @@ class WPISTIC_CF_Newsletter {
 
 		$base_url   = admin_url( 'admin.php?page=' . self::PAGE );
 		$export_url = wp_nonce_url(
-			admin_url( 'admin-post.php?action=wpcf_newsletter_export' ),
-			'wpcf_newsletter_export'
+			admin_url( 'admin-post.php?action=wpistic_formistic_newsletter_export' ),
+			'wpistic_formistic_newsletter_export'
 		);
 		?>
 		<div class="wrap">
@@ -397,8 +397,8 @@ class WPISTIC_CF_Newsletter {
 				<input type="hidden" name="page" value="<?php echo esc_attr( self::PAGE ); ?>">
 				<input type="hidden" name="status" value="<?php echo esc_attr( $status ); ?>">
 				<p class="search-box">
-					<label class="screen-reader-text" for="wpcf-nl-search"><?php esc_html_e( 'Search subscribers', 'formistic' ); ?></label>
-					<input type="search" id="wpcf-nl-search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="<?php esc_attr_e( 'Email or source', 'formistic' ); ?>">
+					<label class="screen-reader-text" for="wpistic-formistic-nl-search"><?php esc_html_e( 'Search subscribers', 'formistic' ); ?></label>
+					<input type="search" id="wpistic-formistic-nl-search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="<?php esc_attr_e( 'Email or source', 'formistic' ); ?>">
 					<input type="submit" class="button" value="<?php esc_attr_e( 'Search', 'formistic' ); ?>">
 				</p>
 			</form>
@@ -426,7 +426,7 @@ class WPISTIC_CF_Newsletter {
 							<td><?php echo esc_html( mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $r->consent_at ) ); ?></td>
 							<td>
 								<?php if ( 'active' === $r->status ) : ?>
-									<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=wpcf_newsletter_unsubscribe&id=' . (int) $r->id ), 'wpcf_newsletter_unsubscribe_' . (int) $r->id ) ); ?>" class="button-link delete" onclick="return confirm('<?php echo esc_js( __( 'Unsubscribe this email?', 'formistic' ) ); ?>');"><?php esc_html_e( 'Unsubscribe', 'formistic' ); ?></a>
+									<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=wpistic_formistic_newsletter_unsubscribe&id=' . (int) $r->id ), 'wpistic_formistic_newsletter_unsubscribe_' . (int) $r->id ) ); ?>" class="button-link delete" onclick="return confirm('<?php echo esc_js( __( 'Unsubscribe this email?', 'formistic' ) ); ?>');"><?php esc_html_e( 'Unsubscribe', 'formistic' ); ?></a>
 								<?php else : ?>
 									<em><?php echo esc_html( $r->unsubscribed_at ? mysql2date( get_option( 'date_format' ), $r->unsubscribed_at ) : __( 'Unsubscribed', 'formistic' ) ); ?></em>
 								<?php endif; ?>
@@ -457,10 +457,10 @@ class WPISTIC_CF_Newsletter {
 	 * Admin: stream the subscriber list as CSV.
 	 */
 	public static function handle_export() {
-		if ( ! current_user_can( WPISTIC_CF_Admin::CAP ) ) {
+		if ( ! current_user_can( Wpistic_Formistic_Admin::CAP ) ) {
 			wp_die( esc_html__( 'You do not have permission to export.', 'formistic' ) );
 		}
-		check_admin_referer( 'wpcf_newsletter_export' );
+		check_admin_referer( 'wpistic_formistic_newsletter_export' );
 
 		global $wpdb;
 		$table  = self::table();
@@ -504,11 +504,11 @@ class WPISTIC_CF_Newsletter {
 	 * Admin: per-row unsubscribe.
 	 */
 	public static function handle_admin_unsubscribe() {
-		if ( ! current_user_can( WPISTIC_CF_Admin::CAP ) ) {
+		if ( ! current_user_can( Wpistic_Formistic_Admin::CAP ) ) {
 			wp_die( esc_html__( 'You do not have permission to do that.', 'formistic' ) );
 		}
 		$id = isset( $_GET['id'] ) ? (int) $_GET['id'] : 0;
-		check_admin_referer( 'wpcf_newsletter_unsubscribe_' . $id );
+		check_admin_referer( 'wpistic_formistic_newsletter_unsubscribe_' . $id );
 
 		if ( $id > 0 ) {
 			global $wpdb;

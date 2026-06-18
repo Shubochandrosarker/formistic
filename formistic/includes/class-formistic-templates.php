@@ -2,11 +2,11 @@
 /**
  * Reply Templates — saved canned replies the reply modal can pull from.
  *
- * Stored as a single option (`WPISTIC_CF_reply_templates`) holding a JSON-encoded
+ * Stored as a single option (`wpistic_formistic_reply_templates`) holding a JSON-encoded
  * array of `{ id, name, subject, body }` records. Managed under
  * Settings → Reply Templates and exposed to the reply modal via AJAX.
  *
- * @package WPISTIC_CF
+ * @package Wpistic_Formistic
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -16,10 +16,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Reply-templates CRUD + AJAX.
  */
-class WPISTIC_CF_Templates {
+class Wpistic_Formistic_Templates {
 
 	/** Option key. */
-	const OPTION = 'WPISTIC_CF_reply_templates';
+	const OPTION = 'wpistic_formistic_reply_templates';
 
 	/** Capability required. */
 	const CAP = 'manage_options';
@@ -28,9 +28,9 @@ class WPISTIC_CF_Templates {
 	 * Register hooks.
 	 */
 	public function register() {
-		add_action( 'admin_post_WPISTIC_CF_save_template',   [ $this, 'save_template' ] );
-		add_action( 'admin_post_WPISTIC_CF_delete_template', [ $this, 'delete_template' ] );
-		add_action( 'wp_ajax_WPISTIC_CF_list_templates',     [ $this, 'ajax_list' ] );
+		add_action( 'admin_post_wpistic_formistic_save_template',   [ $this, 'save_template' ] );
+		add_action( 'admin_post_wpistic_formistic_delete_template', [ $this, 'delete_template' ] );
+		add_action( 'wp_ajax_wpistic_formistic_list_templates',     [ $this, 'ajax_list' ] );
 	}
 
 	/**
@@ -75,7 +75,7 @@ class WPISTIC_CF_Templates {
 		if ( ! current_user_can( self::CAP ) ) {
 			wp_die( esc_html__( 'Permission denied.', 'formistic' ), 403 );
 		}
-		check_admin_referer( 'WPISTIC_CF_templates' );
+		check_admin_referer( 'wpistic_formistic_templates' );
 
 		$id      = isset( $_POST['template_id'] ) ? sanitize_key( $_POST['template_id'] ) : '';
 		$name    = isset( $_POST['template_name'] )    ? sanitize_text_field( wp_unslash( $_POST['template_name'] ) )    : '';
@@ -118,7 +118,7 @@ class WPISTIC_CF_Templates {
 			wp_die( esc_html__( 'Permission denied.', 'formistic' ), 403 );
 		}
 		$id = isset( $_GET['template_id'] ) ? sanitize_key( $_GET['template_id'] ) : '';
-		check_admin_referer( 'WPISTIC_CF_delete_template_' . $id );
+		check_admin_referer( 'wpistic_formistic_delete_template_' . $id );
 
 		$list  = self::all();
 		$after = array_values( array_filter( $list, function ( $t ) use ( $id ) {
@@ -136,9 +136,9 @@ class WPISTIC_CF_Templates {
 	 */
 	protected function redirect_back( $notice ) {
 		$url = add_query_arg( [
-			'page'        => 'wpistic-contact-settings',
+			'page'        => 'formistic-settings',
 			'tab'         => 'templates',
-			'WPISTIC_CF_notice' => $notice,
+			'wpistic_formistic_notice' => $notice,
 		], admin_url( 'admin.php' ) );
 		wp_safe_redirect( $url );
 		exit;
@@ -156,7 +156,7 @@ class WPISTIC_CF_Templates {
 			wp_send_json_error( [ 'message' => __( 'Permission denied.', 'formistic' ) ], 403 );
 		}
 		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
-		if ( ! wp_verify_nonce( $nonce, 'WPISTIC_CF_admin' ) ) {
+		if ( ! wp_verify_nonce( $nonce, 'wpistic_formistic_admin' ) ) {
 			wp_send_json_error( [ 'message' => __( 'Security check failed.', 'formistic' ) ], 403 );
 		}
 		wp_send_json_success( [ 'templates' => self::all() ] );

@@ -7,7 +7,7 @@
  * are served back through an authenticated admin-post endpoint so they can't
  * be hit directly via the public URL.
  *
- * @package WPISTIC_CF
+ * @package Wpistic_Formistic
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,17 +17,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * File upload + download orchestration.
  */
-class WPISTIC_CF_Attachments {
+class Wpistic_Formistic_Attachments {
 
 	/** Storage subdirectory under uploads. */
-	const SUBDIR = 'wpistic-contact-form';
+	const SUBDIR = 'formistic-form';
 
 	/**
 	 * Register hooks.
 	 */
 	public function register() {
-		add_action( 'admin_post_WPISTIC_CF_download',        [ $this, 'download' ] );
-		add_action( 'admin_post_nopriv_WPISTIC_CF_download', [ $this, 'download' ] );
+		add_action( 'admin_post_wpistic_formistic_download',        [ $this, 'download' ] );
+		add_action( 'admin_post_nopriv_wpistic_formistic_download', [ $this, 'download' ] );
 	}
 
 	/**
@@ -36,7 +36,7 @@ class WPISTIC_CF_Attachments {
 	 * @return bool
 	 */
 	public static function enabled() {
-		return '1' === get_option( 'WPISTIC_CF_att_enabled', '1' );
+		return '1' === get_option( 'wpistic_formistic_att_enabled', '1' );
 	}
 
 	/**
@@ -93,7 +93,7 @@ class WPISTIC_CF_Attachments {
 	 * @return string[]
 	 */
 	public static function allowed_extensions() {
-		$raw = (string) get_option( 'WPISTIC_CF_att_allowed_types', 'jpg,jpeg,png,gif,pdf,doc,docx' );
+		$raw = (string) get_option( 'wpistic_formistic_att_allowed_types', 'jpg,jpeg,png,gif,pdf,doc,docx' );
 		$out = array_filter( array_map( 'trim', explode( ',', strtolower( $raw ) ) ) );
 		return array_values( array_unique( $out ) );
 	}
@@ -104,7 +104,7 @@ class WPISTIC_CF_Attachments {
 	 * @return int
 	 */
 	public static function max_bytes() {
-		return max( 1, (int) get_option( 'WPISTIC_CF_att_max_size_mb', 5 ) ) * 1024 * 1024;
+		return max( 1, (int) get_option( 'wpistic_formistic_att_max_size_mb', 5 ) ) * 1024 * 1024;
 	}
 
 	/**
@@ -114,12 +114,12 @@ class WPISTIC_CF_Attachments {
 	 * Perl, Python CGI, classic ASP, JSP, etc.) and the double-extension
 	 * smuggling trick (evil.php.jpg, etc.).
 	 *
-	 * Filterable via WPISTIC_CF_executable_extensions if a site has a
+	 * Filterable via wpistic_formistic_executable_extensions if a site has a
 	 * legitimate reason to relax the list (it should not).
 	 */
 	public static function executable_extensions() {
 		return apply_filters(
-			'WPISTIC_CF_executable_extensions',
+			'wpistic_formistic_executable_extensions',
 			array(
 				// PHP family.
 				'php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'pht', 'phps', 'phar',
@@ -261,7 +261,7 @@ class WPISTIC_CF_Attachments {
 			}
 			chmod( $target, 0640 );
 
-			$id = WPISTIC_CF_Database::insert_attachment( [
+			$id = Wpistic_Formistic_Database::insert_attachment( [
 				'submission_id' => $submission_id,
 				'original_name' => sanitize_file_name( $file['name'] ),
 				'stored_name'   => $stored_name,
@@ -297,7 +297,7 @@ class WPISTIC_CF_Attachments {
 		if ( '' === $original_name ) {
 			$original_name = basename( wp_parse_url( $url, PHP_URL_PATH ) ?: $url );
 		}
-		return WPISTIC_CF_Database::insert_attachment( [
+		return Wpistic_Formistic_Database::insert_attachment( [
 			'submission_id' => $submission_id,
 			'original_name' => sanitize_file_name( $original_name ),
 			'stored_name'   => '',
@@ -323,8 +323,8 @@ class WPISTIC_CF_Attachments {
 			return $attachment->external_url;
 		}
 		return wp_nonce_url(
-			admin_url( 'admin-post.php?action=WPISTIC_CF_download&id=' . (int) $attachment->id ),
-			'WPISTIC_CF_download_' . (int) $attachment->id
+			admin_url( 'admin-post.php?action=wpistic_formistic_download&id=' . (int) $attachment->id ),
+			'wpistic_formistic_download_' . (int) $attachment->id
 		);
 	}
 
@@ -337,9 +337,9 @@ class WPISTIC_CF_Attachments {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to download this file.', 'formistic' ), 403 );
 		}
-		check_admin_referer( 'WPISTIC_CF_download_' . $id );
+		check_admin_referer( 'wpistic_formistic_download_' . $id );
 
-		$att = WPISTIC_CF_Database::get_attachment( $id );
+		$att = Wpistic_Formistic_Database::get_attachment( $id );
 		if ( ! $att || 'local' !== $att->source ) {
 			wp_die( esc_html__( 'Attachment not found.', 'formistic' ), 404 );
 		}
@@ -359,7 +359,7 @@ class WPISTIC_CF_Attachments {
 	}
 
 	/**
-	 * Delete a single file from disk (called from WPISTIC_CF_Database::delete_submission).
+	 * Delete a single file from disk (called from Wpistic_Formistic_Database::delete_submission).
 	 *
 	 * @param int    $submission_id Submission ID.
 	 * @param string $stored_name   Stored filename.

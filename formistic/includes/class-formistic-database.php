@@ -2,7 +2,7 @@
 /**
  * Database layer — table creation and submission/reply storage.
  *
- * @package WPISTIC_CF
+ * @package Wpistic_Formistic
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -12,22 +12,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Handles the two plugin tables: submissions and replies.
  */
-class WPISTIC_CF_Database {
+class Wpistic_Formistic_Database {
 
 	/** Submissions table name (without prefix). */
-	const SUBMISSIONS = 'WPISTIC_CF_submissions';
+	const SUBMISSIONS = 'wpistic_formistic_submissions';
 
 	/** Replies table name (without prefix). */
-	const REPLIES = 'WPISTIC_CF_replies';
+	const REPLIES = 'wpistic_formistic_replies';
 
 	/** Attachments table name (without prefix). */
-	const ATTACHMENTS = 'WPISTIC_CF_attachments';
+	const ATTACHMENTS = 'wpistic_formistic_attachments';
 	/** Notes table name (without prefix). */
-	const NOTES = 'WPISTIC_CF_notes';
+	const NOTES = 'wpistic_formistic_notes';
 	/** Impressions table name (without prefix). */
-	const IMPRESSIONS = 'WPISTIC_CF_impressions';
+	const IMPRESSIONS = 'wpistic_formistic_impressions';
 	/** AI metadata table name (without prefix). */
-	const AI_META = 'wpistic_cf_ai_meta';
+	const AI_META = 'wpistic_formistic_ai_meta';
 
 	/** Fully-qualified submissions table name. */
 	public static function submissions_table() {
@@ -160,21 +160,21 @@ class WPISTIC_CF_Database {
 		dbDelta( $sql_impressions );
 		dbDelta( $sql_ai_meta );
 
-		// Newsletter subscribers table — owned by WPISTIC_CF_Newsletter
+		// Newsletter subscribers table — owned by Wpistic_Formistic_Newsletter
 		// but installed in the same dbDelta pass so the schema upgrade
 		// stays atomic from the admin's point of view.
-		if ( class_exists( 'WPISTIC_CF_Newsletter' ) ) {
-			WPISTIC_CF_Newsletter::install();
+		if ( class_exists( 'Wpistic_Formistic_Newsletter' ) ) {
+			Wpistic_Formistic_Newsletter::install();
 		}
 
-		update_option( 'WPISTIC_CF_db_version', WPISTIC_CF_DB_VERSION );
+		update_option( 'wpistic_formistic_db_version', WPISTIC_FORMISTIC_DB_VERSION );
 	}
 
 	/**
 	 * Ensure the schema is current — cheap guard on admin_init.
 	 */
 	public static function maybe_upgrade() {
-		if ( get_option( 'WPISTIC_CF_db_version' ) !== WPISTIC_CF_DB_VERSION ) {
+		if ( get_option( 'wpistic_formistic_db_version' ) !== WPISTIC_FORMISTIC_DB_VERSION ) {
 			self::install();
 		}
 	}
@@ -329,10 +329,10 @@ class WPISTIC_CF_Database {
 
 		// Delete on-disk files for local attachments before dropping rows.
 		$attachments = self::get_attachments( $id );
-		if ( class_exists( 'WPISTIC_CF_Attachments' ) ) {
+		if ( class_exists( 'Wpistic_Formistic_Attachments' ) ) {
 			foreach ( $attachments as $att ) {
 				if ( 'local' === $att->source ) {
-					WPISTIC_CF_Attachments::delete_file( $id, $att->stored_name );
+					Wpistic_Formistic_Attachments::delete_file( $id, $att->stored_name );
 				}
 			}
 		}

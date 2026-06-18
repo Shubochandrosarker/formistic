@@ -2,7 +2,7 @@
 /**
  * Bulk actions — Mark New/Read/Replied, Delete, Export Selected as CSV/JSON.
  *
- * @package WPISTIC_CF
+ * @package Wpistic_Formistic
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Bulk action POST handler.
  */
-class WPISTIC_CF_Bulk {
+class Wpistic_Formistic_Bulk {
 
 	/** Capability required. */
 	const CAP = 'manage_options';
@@ -21,7 +21,7 @@ class WPISTIC_CF_Bulk {
 	 * Register hooks.
 	 */
 	public function register() {
-		add_action( 'admin_post_WPISTIC_CF_bulk', [ $this, 'handle' ] );
+		add_action( 'admin_post_wpistic_formistic_bulk', [ $this, 'handle' ] );
 	}
 
 	/**
@@ -31,20 +31,20 @@ class WPISTIC_CF_Bulk {
 		if ( ! current_user_can( self::CAP ) ) {
 			wp_die( esc_html__( 'Permission denied.', 'formistic' ), 403 );
 		}
-		check_admin_referer( 'WPISTIC_CF_bulk' );
+		check_admin_referer( 'wpistic_formistic_bulk' );
 
 		$action = isset( $_POST['bulk_action'] ) ? sanitize_key( $_POST['bulk_action'] ) : '';
 		$ids    = isset( $_POST['ids'] ) ? array_filter( array_map( 'intval', (array) $_POST['ids'] ) ) : [];
 
-		$back = wp_get_referer() ?: admin_url( 'admin.php?page=wpistic-contact' );
+		$back = wp_get_referer() ?: admin_url( 'admin.php?page=formistic' );
 
 		if ( '' === $action || ! $ids ) {
 			$this->redirect( $back, 'none', 0 );
 		}
 
-		// Export branches delegate to WPISTIC_CF_Export and exit there.
+		// Export branches delegate to Wpistic_Formistic_Export and exit there.
 		if ( 'export_csv' === $action || 'export_json' === $action ) {
-			$exporter = new WPISTIC_CF_Export();
+			$exporter = new Wpistic_Formistic_Export();
 			$format   = 'export_json' === $action ? 'json' : 'csv';
 			$exporter->stream( $format, [ 'ids' => $ids ] );
 			exit;
@@ -53,16 +53,16 @@ class WPISTIC_CF_Bulk {
 		$n = 0;
 		switch ( $action ) {
 			case 'mark_new':
-				$n = WPISTIC_CF_Database::bulk_set_status( $ids, 'new' );
+				$n = Wpistic_Formistic_Database::bulk_set_status( $ids, 'new' );
 				break;
 			case 'mark_read':
-				$n = WPISTIC_CF_Database::bulk_set_status( $ids, 'read' );
+				$n = Wpistic_Formistic_Database::bulk_set_status( $ids, 'read' );
 				break;
 			case 'mark_replied':
-				$n = WPISTIC_CF_Database::bulk_set_status( $ids, 'replied' );
+				$n = Wpistic_Formistic_Database::bulk_set_status( $ids, 'replied' );
 				break;
 			case 'delete':
-				$n = WPISTIC_CF_Database::bulk_delete( $ids );
+				$n = Wpistic_Formistic_Database::bulk_delete( $ids );
 				break;
 			default:
 				$this->redirect( $back, 'invalid', 0 );
@@ -81,10 +81,10 @@ class WPISTIC_CF_Bulk {
 	protected function redirect( $back, $notice, $count ) {
 		$url = add_query_arg(
 			[
-				'WPISTIC_CF_notice' => $notice,
+				'wpistic_formistic_notice' => $notice,
 				'n'           => (int) $count,
 			],
-			remove_query_arg( [ 'WPISTIC_CF_notice', 'n' ], $back )
+			remove_query_arg( [ 'wpistic_formistic_notice', 'n' ], $back )
 		);
 		wp_safe_redirect( $url );
 		exit;
