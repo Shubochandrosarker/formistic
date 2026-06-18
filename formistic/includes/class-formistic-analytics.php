@@ -6,7 +6,7 @@
  * Charts are inline SVG so we don't ship a charting library or external
  * dependency.
  *
- * @package WPISTIC_CF
+ * @package Wpistic_Formistic
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Analytics page renderer.
  */
-class WPISTIC_CF_Analytics {
+class Wpistic_Formistic_Analytics {
 
 	/** Capability required. */
 	const CAP = 'manage_options';
@@ -24,29 +24,29 @@ class WPISTIC_CF_Analytics {
 	/**
 	 * Render the analytics page.
 	 *
-	 * @param callable $header_renderer Brand header renderer from WPISTIC_CF_Admin.
+	 * @param callable $header_renderer Brand header renderer from Wpistic_Formistic_Admin.
 	 */
 	public function render( $header_renderer ) {
 		if ( ! current_user_can( self::CAP ) ) {
 			return;
 		}
 
-		$daily      = WPISTIC_CF_Database::submissions_by_day( 30 );
+		$daily      = Wpistic_Formistic_Database::submissions_by_day( 30 );
 		$total_30d  = array_sum( $daily );
-		$today      = WPISTIC_CF_Database::today_count();
-		$top_forms  = WPISTIC_CF_Database::top_forms( 5 );
-		$avg_secs   = WPISTIC_CF_Database::avg_reply_time_seconds();
-		$p50_secs   = WPISTIC_CF_Database::p50_reply_time_seconds();
-		$overdue    = WPISTIC_CF_Database::overdue_submissions_count( 24 );
-		$rep_rate   = WPISTIC_CF_Database::replied_rate();
-		$counts     = WPISTIC_CF_Database::status_counts();
-		$imp_today  = WPISTIC_CF_Database::impressions_today_count();
-		$conv_rows  = WPISTIC_CF_Database::conversion_by_form( 30 );
+		$today      = Wpistic_Formistic_Database::today_count();
+		$top_forms  = Wpistic_Formistic_Database::top_forms( 5 );
+		$avg_secs   = Wpistic_Formistic_Database::avg_reply_time_seconds();
+		$p50_secs   = Wpistic_Formistic_Database::p50_reply_time_seconds();
+		$overdue    = Wpistic_Formistic_Database::overdue_submissions_count( 24 );
+		$rep_rate   = Wpistic_Formistic_Database::replied_rate();
+		$counts     = Wpistic_Formistic_Database::status_counts();
+		$imp_today  = Wpistic_Formistic_Database::impressions_today_count();
+		$conv_rows  = Wpistic_Formistic_Database::conversion_by_form( 30 );
 		?>
-		<div class="wrap WPISTIC_CF-wrap">
+		<div class="wrap wpistic-formistic-wrap">
 			<?php call_user_func( $header_renderer, __( 'Volume, response time and where your submissions are coming from.', 'formistic' ) ); ?>
 
-			<div class="WPISTIC_CF-kpis">
+			<div class="wpistic-formistic-kpis">
 				<?php
 				$kpis = [
 					[
@@ -87,20 +87,20 @@ class WPISTIC_CF_Analytics {
 				];
 				foreach ( $kpis as $k ) :
 					?>
-					<div class="WPISTIC_CF-kpi">
-						<span class="WPISTIC_CF-kpi__label"><?php echo esc_html( $k['label'] ); ?></span>
-						<span class="WPISTIC_CF-kpi__value"><?php echo esc_html( $k['value'] ); ?></span>
-						<span class="WPISTIC_CF-kpi__sub"><?php echo esc_html( $k['sub'] ); ?></span>
+					<div class="wpistic-formistic-kpi">
+						<span class="wpistic-formistic-kpi__label"><?php echo esc_html( $k['label'] ); ?></span>
+						<span class="wpistic-formistic-kpi__value"><?php echo esc_html( $k['value'] ); ?></span>
+						<span class="wpistic-formistic-kpi__sub"><?php echo esc_html( $k['sub'] ); ?></span>
 					</div>
 				<?php endforeach; ?>
 			</div>
 
-			<div class="WPISTIC_CF-panel WPISTIC_CF-panel--pad">
+			<div class="wpistic-formistic-panel wpistic-formistic-panel--pad">
 				<h2 style="margin-top:0;"><?php esc_html_e( 'Submissions — last 30 days', 'formistic' ); ?></h2>
 				<?php echo self::render_daily_chart( $daily ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- inline SVG built from int values ?>
 			</div>
 
-			<div class="WPISTIC_CF-panel WPISTIC_CF-panel--pad">
+			<div class="wpistic-formistic-panel wpistic-formistic-panel--pad">
 				<h2 style="margin-top:0;"><?php esc_html_e( 'Top forms', 'formistic' ); ?></h2>
 				<?php if ( ! $top_forms ) : ?>
 					<p><em><?php esc_html_e( 'No submissions yet.', 'formistic' ); ?></em></p>
@@ -109,12 +109,12 @@ class WPISTIC_CF_Analytics {
 				<?php endif; ?>
 			</div>
 
-			<div class="WPISTIC_CF-panel WPISTIC_CF-panel--pad">
+			<div class="wpistic-formistic-panel wpistic-formistic-panel--pad">
 				<h2 style="margin-top:0;"><?php esc_html_e( 'Cross-form conversion (30 days)', 'formistic' ); ?></h2>
 				<?php if ( ! $conv_rows ) : ?>
 					<p><em><?php esc_html_e( 'No conversion data yet.', 'formistic' ); ?></em></p>
 				<?php else : ?>
-					<table class="WPISTIC_CF-table">
+					<table class="wpistic-formistic-table">
 						<thead>
 							<tr>
 								<th><?php esc_html_e( 'Form', 'formistic' ); ?></th>
@@ -169,7 +169,7 @@ class WPISTIC_CF_Analytics {
 		$count   = count( $values );
 		$bar_w   = $plot_w / $count - 3;
 
-		$svg  = '<svg class="WPISTIC_CF-chart" viewBox="0 0 ' . $width . ' ' . $height . '" preserveAspectRatio="none" role="img" aria-label="' . esc_attr__( '30-day submission volume', 'formistic' ) . '">';
+		$svg  = '<svg class="wpistic-formistic-chart" viewBox="0 0 ' . $width . ' ' . $height . '" preserveAspectRatio="none" role="img" aria-label="' . esc_attr__( '30-day submission volume', 'formistic' ) . '">';
 		// Y axis baseline.
 		$svg .= '<line x1="' . $pad_l . '" y1="' . ( $pad_t + $plot_h ) . '" x2="' . ( $width - $pad_r ) . '" y2="' . ( $pad_t + $plot_h ) . '" stroke="#e4e5ee"/>';
 		// Y-axis max label.
@@ -206,13 +206,13 @@ class WPISTIC_CF_Analytics {
 		foreach ( $rows as $r ) {
 			$max = max( $max, (int) $r['n'] );
 		}
-		$out = '<ul class="WPISTIC_CF-topforms">';
+		$out = '<ul class="wpistic-formistic-topforms">';
 		foreach ( $rows as $r ) {
 			$pct = max( 1, (int) round( ( $r['n'] / $max ) * 100 ) );
-			$out .= '<li class="WPISTIC_CF-topforms__row">';
-			$out .= '<span class="WPISTIC_CF-topforms__name">' . esc_html( $r['form_name'] ?: __( '(unnamed form)', 'formistic' ) ) . '</span>';
-			$out .= '<span class="WPISTIC_CF-topforms__bar"><span class="WPISTIC_CF-topforms__fill" style="width:' . $pct . '%"></span></span>';
-			$out .= '<span class="WPISTIC_CF-topforms__num">' . number_format_i18n( (int) $r['n'] ) . '</span>';
+			$out .= '<li class="wpistic-formistic-topforms__row">';
+			$out .= '<span class="wpistic-formistic-topforms__name">' . esc_html( $r['form_name'] ?: __( '(unnamed form)', 'formistic' ) ) . '</span>';
+			$out .= '<span class="wpistic-formistic-topforms__bar"><span class="wpistic-formistic-topforms__fill" style="width:' . $pct . '%"></span></span>';
+			$out .= '<span class="wpistic-formistic-topforms__num">' . number_format_i18n( (int) $r['n'] ) . '</span>';
 			$out .= '</li>';
 		}
 		$out .= '</ul>';

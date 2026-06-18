@@ -53,7 +53,7 @@ The version is read automatically from `formistic/formistic.php`.
 
 ## Current release
 
-- **Version:** `1.5.2`
+- **Version:** `2.0.0`
 - **Requires WordPress:** `6.2+`
 - **Tested up to:** `6.9`
 - **Requires PHP:** `7.4+`

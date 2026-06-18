@@ -1,10 +1,10 @@
 <?php
 /**
  * Auto-Responder — emails a confirmation to the submitter after a successful
- * capture. Listens for the `WPISTIC_CF_submission_captured` action emitted by
- * WPISTIC_CF_Capture::store().
+ * capture. Listens for the `wpistic_formistic_submission_captured` action emitted by
+ * Wpistic_Formistic_Capture::store().
  *
- * @package WPISTIC_CF
+ * @package Wpistic_Formistic
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -14,13 +14,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Sends auto-responder emails.
  */
-class WPISTIC_CF_Autoresponder {
+class Wpistic_Formistic_Autoresponder {
 
 	/**
 	 * Register hooks.
 	 */
 	public function register() {
-		add_action( 'WPISTIC_CF_submission_captured', [ $this, 'maybe_send' ], 20, 3 );
+		add_action( 'wpistic_formistic_submission_captured', [ $this, 'maybe_send' ], 20, 3 );
 	}
 
 	/**
@@ -32,26 +32,26 @@ class WPISTIC_CF_Autoresponder {
 	 * @param array  $fields        Captured fields (label => value).
 	 */
 	public function maybe_send( $submission_id, $form_name, $fields ) {
-		// Global kill-switch. Set WPCF_EMAIL_DISABLED in wp-config.php on
+		// Global kill-switch. Set WPISTIC_FORMISTIC_EMAIL_DISABLED in wp-config.php on
 		// staging/dev to suppress all outbound auto-responders without
 		// touching the per-form admin toggle.
-		if ( ( defined( 'WPCF_EMAIL_DISABLED' ) && WPCF_EMAIL_DISABLED )
-			|| (bool) get_option( 'WPISTIC_CF_emails_disabled', false ) ) {
+		if ( ( defined( 'WPISTIC_FORMISTIC_EMAIL_DISABLED' ) && WPISTIC_FORMISTIC_EMAIL_DISABLED )
+			|| (bool) get_option( 'wpistic_formistic_emails_disabled', false ) ) {
 			return;
 		}
 
-		if ( '1' !== get_option( 'WPISTIC_CF_ar_enabled', '0' ) ) {
+		if ( '1' !== get_option( 'wpistic_formistic_ar_enabled', '0' ) ) {
 			return;
 		}
 
-		$submission = WPISTIC_CF_Database::get_submission( (int) $submission_id );
+		$submission = Wpistic_Formistic_Database::get_submission( (int) $submission_id );
 		if ( ! $submission || ! is_email( $submission->sender_email ) ) {
 			return;
 		}
 
 		// Per-target throttle: do not re-send to the same email more than
 		// once per hour, even if a script floods the capture endpoint.
-		$throttle_key = 'wpcf_ar_' . md5( strtolower( trim( $submission->sender_email ) ) );
+		$throttle_key = 'wpistic_formistic_ar_' . md5( strtolower( trim( $submission->sender_email ) ) );
 		if ( false !== get_transient( $throttle_key ) ) {
 			return;
 		}
@@ -66,21 +66,21 @@ class WPISTIC_CF_Autoresponder {
 			'{date}'      => date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ),
 		];
 
-		$subject = strtr( (string) get_option( 'WPISTIC_CF_ar_subject', '' ), $placeholders );
-		$body    = strtr( (string) get_option( 'WPISTIC_CF_ar_body', '' ), $placeholders );
+		$subject = strtr( (string) get_option( 'wpistic_formistic_ar_subject', '' ), $placeholders );
+		$body    = strtr( (string) get_option( 'wpistic_formistic_ar_body', '' ), $placeholders );
 		if ( '' === trim( $subject ) || '' === trim( $body ) ) {
 			return;
 		}
 
-		$from_name  = get_option( 'WPISTIC_CF_reply_from_name', get_bloginfo( 'name' ) );
-		$from_email = get_option( 'WPISTIC_CF_reply_from_email', get_option( 'admin_email' ) );
+		$from_name  = get_option( 'wpistic_formistic_reply_from_name', get_bloginfo( 'name' ) );
+		$from_email = get_option( 'wpistic_formistic_reply_from_email', get_option( 'admin_email' ) );
 		$headers    = [];
 		if ( is_email( $from_email ) ) {
 			$headers[] = sprintf( 'From: %s <%s>', $from_name, $from_email );
 			$headers[] = 'Reply-To: ' . $from_email;
 		}
 
-		WPISTIC_CF_Capture::send_internal( $submission->sender_email, $subject, $body, $headers );
+		Wpistic_Formistic_Capture::send_internal( $submission->sender_email, $subject, $body, $headers );
 	}
 
 	/**
@@ -89,7 +89,7 @@ class WPISTIC_CF_Autoresponder {
 	 * @param int $submission_id Submission ID.
 	 */
 	public static function replay_for_submission( $submission_id ) {
-		$row = WPISTIC_CF_Database::get_submission( (int) $submission_id );
+		$row = Wpistic_Formistic_Database::get_submission( (int) $submission_id );
 		if ( ! $row ) {
 			return;
 		}

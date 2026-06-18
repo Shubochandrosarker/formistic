@@ -2,7 +2,7 @@
 /**
  * AI Layer for Formistic (Phase 3 / v1.6.0).
  *
- * @package WPISTIC_CF
+ * @package Wpistic_Formistic
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -12,13 +12,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * AI enrichment + automated reply orchestration.
  */
-class WPistic_CF_AI {
+class Wpistic_Formistic_AI {
 
 	/**
 	 * Register hooks.
 	 */
 	public function register() {
-		add_action( 'WPISTIC_CF_submission_captured', [ $this, 'wpistic_cf_handle_submission_ai' ], 40, 3 );
+		add_action( 'wpistic_formistic_submission_captured', [ $this, 'wpistic_formistic_handle_submission_ai' ], 40, 3 );
 	}
 
 	/**
@@ -28,29 +28,29 @@ class WPistic_CF_AI {
 	 * @param string $form_name     Form name.
 	 * @param array  $fields        Submission fields.
 	 */
-	public function wpistic_cf_handle_submission_ai( $submission_id, $form_name, $fields ) {
-		$row = WPISTIC_CF_Database::get_submission( (int) $submission_id );
+	public function wpistic_formistic_handle_submission_ai( $submission_id, $form_name, $fields ) {
+		$row = Wpistic_Formistic_Database::get_submission( (int) $submission_id );
 		if ( ! $row ) {
 			return;
 		}
-		$spam_score = $this->wpistic_cf_calculate_spam_score( $row, $fields );
-		$tags       = $this->wpistic_cf_generate_tags( $row, $fields );
+		$spam_score = $this->wpistic_formistic_calculate_spam_score( $row, $fields );
+		$tags       = $this->wpistic_formistic_generate_tags( $row, $fields );
 		$draft      = '';
 
-		if ( '1' === get_option( 'wpistic_cf_ai_smart_reply_enabled', '0' ) ) {
-			$draft = $this->wpistic_cf_generate_smart_reply( $row, $fields );
+		if ( '1' === get_option( 'wpistic_formistic_ai_smart_reply_enabled', '0' ) ) {
+			$draft = $this->wpistic_formistic_generate_smart_reply( $row, $fields );
 		}
 
-		WPISTIC_CF_Database::upsert_ai_meta(
+		Wpistic_Formistic_Database::upsert_ai_meta(
 			(int) $submission_id,
 			(int) $spam_score,
 			implode( ', ', $tags ),
 			$draft,
-			(string) get_option( 'wpistic_cf_ai_provider', 'local_rules' )
+			(string) get_option( 'wpistic_formistic_ai_provider', 'local_rules' )
 		);
 
-		if ( '1' === get_option( 'wpistic_cf_ai_auto_reply_enabled', '0' ) ) {
-			$this->wpistic_cf_maybe_send_automated_reply( $row, $draft, $form_name );
+		if ( '1' === get_option( 'wpistic_formistic_ai_auto_reply_enabled', '0' ) ) {
+			$this->wpistic_formistic_maybe_send_automated_reply( $row, $draft, $form_name );
 		}
 	}
 
@@ -61,7 +61,7 @@ class WPistic_CF_AI {
 	 * @param array  $fields Fields.
 	 * @return int
 	 */
-	protected function wpistic_cf_calculate_spam_score( $row, $fields ) {
+	protected function wpistic_formistic_calculate_spam_score( $row, $fields ) {
 		$score = 10;
 		$message = strtolower( (string) $row->message );
 		if ( preg_match_all( '~https?://~', $message, $m ) ) {
@@ -86,7 +86,7 @@ class WPistic_CF_AI {
 	 * @param array  $fields Fields.
 	 * @return string[]
 	 */
-	protected function wpistic_cf_generate_tags( $row, $fields ) {
+	protected function wpistic_formistic_generate_tags( $row, $fields ) {
 		$text = strtolower( (string) $row->subject . ' ' . (string) $row->message . ' ' . wp_json_encode( $fields ) );
 		$tags = [];
 		$map  = [
@@ -117,8 +117,8 @@ class WPistic_CF_AI {
 	 * @param array  $fields Fields.
 	 * @return string
 	 */
-	protected function wpistic_cf_generate_smart_reply( $row, $fields ) {
-		$context = $this->wpistic_cf_get_knowledge_context();
+	protected function wpistic_formistic_generate_smart_reply( $row, $fields ) {
+		$context = $this->wpistic_formistic_get_knowledge_context();
 		$prompt  = "You are the Formistic assistant for this website. Write a concise professional reply.\n";
 		$prompt .= "Sender name: " . (string) $row->sender_name . "\n";
 		$prompt .= "Sender email: " . (string) $row->sender_email . "\n";
@@ -126,11 +126,11 @@ class WPistic_CF_AI {
 		$prompt .= "Message: " . (string) $row->message . "\n";
 		$prompt .= "Fields: " . wp_json_encode( $fields ) . "\n";
 		$prompt .= "Knowledge Context:\n" . $context . "\n";
-		$generated = $this->wpistic_cf_ai_generate_text( $prompt );
+		$generated = $this->wpistic_formistic_ai_generate_text( $prompt );
 		if ( '' !== trim( $generated ) ) {
 			return $generated;
 		}
-		return $this->wpistic_cf_local_fallback_reply( $row );
+		return $this->wpistic_formistic_local_fallback_reply( $row );
 	}
 
 	/**
@@ -140,11 +140,11 @@ class WPistic_CF_AI {
 	 * @param string $ai_draft  Generated draft.
 	 * @param string $form_name Form name.
 	 */
-	protected function wpistic_cf_maybe_send_automated_reply( $row, $ai_draft, $form_name ) {
+	protected function wpistic_formistic_maybe_send_automated_reply( $row, $ai_draft, $form_name ) {
 		if ( ! is_email( (string) $row->sender_email ) ) {
 			return;
 		}
-		$subject_tpl = (string) get_option( 'wpistic_cf_ai_auto_reply_subject', 'Thanks for contacting {site_name}' );
+		$subject_tpl = (string) get_option( 'wpistic_formistic_ai_auto_reply_subject', 'Thanks for contacting {site_name}' );
 		$subject     = strtr(
 			$subject_tpl,
 			[
@@ -154,20 +154,20 @@ class WPistic_CF_AI {
 			]
 		);
 
-		$body = $this->wpistic_cf_apply_automation_rules( $row, $ai_draft );
+		$body = $this->wpistic_formistic_apply_automation_rules( $row, $ai_draft );
 		if ( '' === trim( $body ) ) {
 			return;
 		}
 		$headers = [];
-		$from_email = get_option( 'WPISTIC_CF_reply_from_email', get_option( 'admin_email' ) );
-		$from_name  = get_option( 'WPISTIC_CF_reply_from_name', get_bloginfo( 'name' ) );
+		$from_email = get_option( 'wpistic_formistic_reply_from_email', get_option( 'admin_email' ) );
+		$from_name  = get_option( 'wpistic_formistic_reply_from_name', get_bloginfo( 'name' ) );
 		if ( is_email( $from_email ) ) {
 			$headers[] = sprintf( 'From: %s <%s>', $from_name, $from_email );
 		}
-		$sent = WPISTIC_CF_Capture::send_internal( (string) $row->sender_email, $subject, $body, $headers );
+		$sent = Wpistic_Formistic_Capture::send_internal( (string) $row->sender_email, $subject, $body, $headers );
 		if ( $sent ) {
-			WPISTIC_CF_Database::insert_reply( (int) $row->id, $subject, $body );
-			WPISTIC_CF_Database::set_status( (int) $row->id, 'replied' );
+			Wpistic_Formistic_Database::insert_reply( (int) $row->id, $subject, $body );
+			Wpistic_Formistic_Database::set_status( (int) $row->id, 'replied' );
 		}
 	}
 
@@ -181,8 +181,8 @@ class WPistic_CF_AI {
 	 * @param string $ai_draft AI draft.
 	 * @return string
 	 */
-	protected function wpistic_cf_apply_automation_rules( $row, $ai_draft ) {
-		$rules = (string) get_option( 'wpistic_cf_ai_auto_reply_rules', '' );
+	protected function wpistic_formistic_apply_automation_rules( $row, $ai_draft ) {
+		$rules = (string) get_option( 'wpistic_formistic_ai_auto_reply_rules', '' );
 		$text  = strtolower( (string) $row->subject . ' ' . (string) $row->message );
 		$lines = preg_split( '/\r\n|\r|\n/', $rules );
 		foreach ( (array) $lines as $line ) {
@@ -202,7 +202,7 @@ class WPistic_CF_AI {
 				);
 			}
 		}
-		return '' !== trim( $ai_draft ) ? $ai_draft : $this->wpistic_cf_local_fallback_reply( $row );
+		return '' !== trim( $ai_draft ) ? $ai_draft : $this->wpistic_formistic_local_fallback_reply( $row );
 	}
 
 	/**
@@ -210,34 +210,34 @@ class WPistic_CF_AI {
 	 *
 	 * @return string
 	 */
-	protected function wpistic_cf_get_knowledge_context() {
+	protected function wpistic_formistic_get_knowledge_context() {
 		$chunks = [];
-		$faq = (string) get_option( 'wpistic_cf_ai_faq_text', '' );
-		$kb  = (string) get_option( 'wpistic_cf_ai_kb_text', '' );
+		$faq = (string) get_option( 'wpistic_formistic_ai_faq_text', '' );
+		$kb  = (string) get_option( 'wpistic_formistic_ai_kb_text', '' );
 		if ( '' !== trim( $faq ) ) {
 			$chunks[] = "FAQs:\n" . $faq;
 		}
 		if ( '' !== trim( $kb ) ) {
 			$chunks[] = "Knowledge Base:\n" . $kb;
 		}
-		$sheets = preg_split( '/\r\n|\r|\n/', (string) get_option( 'wpistic_cf_ai_google_sheets_urls', '' ) );
+		$sheets = preg_split( '/\r\n|\r|\n/', (string) get_option( 'wpistic_formistic_ai_google_sheets_urls', '' ) );
 		foreach ( (array) $sheets as $url ) {
 			$url = trim( (string) $url );
 			if ( '' === $url ) {
 				continue;
 			}
-			$data = $this->wpistic_cf_fetch_source_text( $url );
+			$data = $this->wpistic_formistic_fetch_source_text( $url );
 			if ( '' !== $data ) {
 				$chunks[] = "Google Sheet Source:\n" . $data;
 			}
 		}
-		$sources = preg_split( '/\r\n|\r|\n/', (string) get_option( 'wpistic_cf_ai_text_sources', '' ) );
+		$sources = preg_split( '/\r\n|\r|\n/', (string) get_option( 'wpistic_formistic_ai_text_sources', '' ) );
 		foreach ( (array) $sources as $source ) {
 			$source = trim( (string) $source );
 			if ( '' === $source ) {
 				continue;
 			}
-			$data = $this->wpistic_cf_fetch_source_text( $source );
+			$data = $this->wpistic_formistic_fetch_source_text( $source );
 			if ( '' !== $data ) {
 				$chunks[] = "Custom Text Source:\n" . $data;
 			}
@@ -252,7 +252,7 @@ class WPistic_CF_AI {
 	 * @param string $source URL or file path.
 	 * @return string
 	 */
-	protected function wpistic_cf_fetch_source_text( $source ) {
+	protected function wpistic_formistic_fetch_source_text( $source ) {
 		$source = trim( (string) $source );
 		if ( '' === $source ) {
 			return '';
@@ -260,11 +260,11 @@ class WPistic_CF_AI {
 
 		// URL branch — HTTPS only by default, with SSRF blocks for
 		// private + loopback + link-local + cloud-metadata ranges.
-		// Override via the WPISTIC_CF_ai_url_check filter (return WP_Error
+		// Override via the wpistic_formistic_ai_url_check filter (return WP_Error
 		// to deny, true to allow) when a site genuinely needs to fetch
 		// from an internal endpoint.
 		if ( preg_match( '~^https?://~i', $source ) ) {
-			$allowed = self::wpistic_cf_url_is_safe( $source );
+			$allowed = self::wpistic_formistic_url_is_safe( $source );
 			if ( true !== $allowed ) {
 				return '';
 			}
@@ -273,7 +273,7 @@ class WPistic_CF_AI {
 				array(
 					'timeout'     => 10,
 					'redirection' => 0, // refuse redirects so a 302 → http://169.254.169.254 can't slip through
-					'user-agent'  => 'Formistic-AI/' . WPISTIC_CF_VERSION . ' (+' . home_url( '/' ) . ')',
+					'user-agent'  => 'Formistic-AI/' . WPISTIC_FORMISTIC_VERSION . ' (+' . home_url( '/' ) . ')',
 				)
 			);
 			if ( is_wp_error( $res ) ) {
@@ -314,14 +314,14 @@ class WPistic_CF_AI {
 	 *
 	 * Returns true when the URL is safe to fetch, or a WP_Error
 	 * describing why it was rejected. Override via the
-	 * WPISTIC_CF_ai_url_check filter — return true to allow an
+	 * wpistic_formistic_ai_url_check filter — return true to allow an
 	 * otherwise-blocked URL, or a WP_Error to deny one that would
 	 * otherwise pass.
 	 */
-	public static function wpistic_cf_url_is_safe( $url ) {
+	public static function wpistic_formistic_url_is_safe( $url ) {
 		$parts = wp_parse_url( (string) $url );
 		if ( empty( $parts['host'] ) ) {
-			return new \WP_Error( 'wpcf_ai_url_invalid', 'URL has no host.' );
+			return new \WP_Error( 'wpistic_formistic_ai_url_invalid', 'URL has no host.' );
 		}
 		// Scheme: HTTPS only, with HTTP allowed only for localhost so
 		// people running Ollama at 127.0.0.1:11434 still work.
@@ -329,15 +329,15 @@ class WPistic_CF_AI {
 		$host   = strtolower( $parts['host'] );
 		$is_local_host = in_array( $host, array( 'localhost', '127.0.0.1', '::1' ), true );
 		if ( 'https' !== $scheme && ! ( 'http' === $scheme && $is_local_host ) ) {
-			$reject = new \WP_Error( 'wpcf_ai_url_scheme', 'Only https:// URLs are allowed.' );
-			return apply_filters( 'WPISTIC_CF_ai_url_check', $reject, $url, $parts );
+			$reject = new \WP_Error( 'wpistic_formistic_ai_url_scheme', 'Only https:// URLs are allowed.' );
+			return apply_filters( 'wpistic_formistic_ai_url_check', $reject, $url, $parts );
 		}
 		// Special-case localhost/127.0.0.1/::1 — local AI providers like
 		// Ollama bind here. Skip the IP-resolution + private-range check
 		// because by definition these targets ARE local; the scheme guard
 		// above already ensured the URL is intentional.
 		if ( $is_local_host ) {
-			return apply_filters( 'WPISTIC_CF_ai_url_check', true, $url, $parts );
+			return apply_filters( 'wpistic_formistic_ai_url_check', true, $url, $parts );
 		}
 		// Resolve the host to its IP(s). dns_get_record returns A+AAAA;
 		// gethostbynamel returns IPv4 — combine both for IPv6 coverage.
@@ -355,23 +355,23 @@ class WPistic_CF_AI {
 			}
 		}
 		if ( empty( $ips ) ) {
-			$reject = new \WP_Error( 'wpcf_ai_url_dns', 'Host does not resolve.' );
-			return apply_filters( 'WPISTIC_CF_ai_url_check', $reject, $url, $parts );
+			$reject = new \WP_Error( 'wpistic_formistic_ai_url_dns', 'Host does not resolve.' );
+			return apply_filters( 'wpistic_formistic_ai_url_check', $reject, $url, $parts );
 		}
 		foreach ( $ips as $ip ) {
-			if ( self::wpistic_cf_ip_is_private_or_metadata( $ip ) ) {
-				$reject = new \WP_Error( 'wpcf_ai_url_internal', 'Host resolves to an internal / metadata IP.' );
-				return apply_filters( 'WPISTIC_CF_ai_url_check', $reject, $url, $parts );
+			if ( self::wpistic_formistic_ip_is_private_or_metadata( $ip ) ) {
+				$reject = new \WP_Error( 'wpistic_formistic_ai_url_internal', 'Host resolves to an internal / metadata IP.' );
+				return apply_filters( 'wpistic_formistic_ai_url_check', $reject, $url, $parts );
 			}
 		}
-		return apply_filters( 'WPISTIC_CF_ai_url_check', true, $url, $parts );
+		return apply_filters( 'wpistic_formistic_ai_url_check', true, $url, $parts );
 	}
 
 	/**
 	 * True if the IP is in a private, loopback, link-local, multicast,
 	 * or cloud-metadata range. SSRF-relevant denylist.
 	 */
-	public static function wpistic_cf_ip_is_private_or_metadata( $ip ) {
+	public static function wpistic_formistic_ip_is_private_or_metadata( $ip ) {
 		if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) {
 			return true; // unparseable → reject
 		}
@@ -397,14 +397,14 @@ class WPistic_CF_AI {
 	 * @param string $prompt Prompt text.
 	 * @return string
 	 */
-	protected function wpistic_cf_ai_generate_text( $prompt ) {
-		$provider = (string) get_option( 'wpistic_cf_ai_provider', 'local_rules' );
+	protected function wpistic_formistic_ai_generate_text( $prompt ) {
+		$provider = (string) get_option( 'wpistic_formistic_ai_provider', 'local_rules' );
 		if ( 'local_rules' === $provider ) {
 			return '';
 		}
-		$endpoint = (string) get_option( 'wpistic_cf_ai_endpoint', '' );
-		$model    = (string) get_option( 'wpistic_cf_ai_model', '' );
-		$api_key  = (string) get_option( 'wpistic_cf_ai_api_key', '' );
+		$endpoint = (string) get_option( 'wpistic_formistic_ai_endpoint', '' );
+		$model    = (string) get_option( 'wpistic_formistic_ai_model', '' );
+		$api_key  = (string) get_option( 'wpistic_formistic_ai_api_key', '' );
 		if ( '' === $endpoint ) {
 			return '';
 		}
@@ -449,7 +449,7 @@ class WPistic_CF_AI {
 	 * @param object $row Submission row.
 	 * @return string
 	 */
-	protected function wpistic_cf_local_fallback_reply( $row ) {
+	protected function wpistic_formistic_local_fallback_reply( $row ) {
 		$name = '' !== trim( (string) $row->sender_name ) ? (string) $row->sender_name : __( 'there', 'formistic' );
 		return sprintf(
 			/* translators: 1: sender name, 2: site name */

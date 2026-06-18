@@ -7,7 +7,7 @@
  * Used directly by the "Export filtered (CSV/JSON)" buttons and indirectly
  * by the bulk "Export Selected" actions.
  *
- * @package WPISTIC_CF
+ * @package Wpistic_Formistic
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * CSV / JSON exporter.
  */
-class WPISTIC_CF_Export {
+class Wpistic_Formistic_Export {
 
 	/** Capability required. */
 	const CAP = 'manage_options';
@@ -26,7 +26,7 @@ class WPISTIC_CF_Export {
 	 * Register hooks.
 	 */
 	public function register() {
-		add_action( 'admin_post_WPISTIC_CF_export', [ $this, 'handle_export' ] );
+		add_action( 'admin_post_wpistic_formistic_export', [ $this, 'handle_export' ] );
 	}
 
 	/**
@@ -84,7 +84,7 @@ class WPISTIC_CF_Export {
 		if ( ! current_user_can( self::CAP ) ) {
 			wp_die( esc_html__( 'Permission denied.', 'formistic' ), 403 );
 		}
-		check_admin_referer( 'WPISTIC_CF_export' );
+		check_admin_referer( 'wpistic_formistic_export' );
 
 		$format = isset( $_REQUEST['format'] ) ? sanitize_key( $_REQUEST['format'] ) : 'csv';
 		$format = in_array( $format, [ 'csv', 'json' ], true ) ? $format : 'csv';
@@ -109,12 +109,12 @@ class WPISTIC_CF_Export {
 	 * Stream the export with appropriate headers.
 	 *
 	 * @param string $format csv|json.
-	 * @param array  $args   Filter args for WPISTIC_CF_Database::each_submission.
+	 * @param array  $args   Filter args for Wpistic_Formistic_Database::each_submission.
 	 */
 	public function stream( $format, array $args ) {
 		nocache_headers();
 		$stamp    = gmdate( 'Y-m-d-His' );
-		$filename = 'wpistic-contact-export-' . $stamp . '.' . $format;
+		$filename = 'formistic-export-' . $stamp . '.' . $format;
 
 		while ( ob_get_level() > 0 ) {
 			ob_end_clean();
@@ -144,8 +144,8 @@ class WPISTIC_CF_Export {
 
 		fputcsv( $out, array_map( array( $this, 'neutralize_csv_cell' ), self::columns() ) );
 
-		WPISTIC_CF_Database::each_submission( $args, function ( $row ) use ( $out ) {
-			$counts = WPISTIC_CF_Database::attachment_counts( [ (int) $row->id ] );
+		Wpistic_Formistic_Database::each_submission( $args, function ( $row ) use ( $out ) {
+			$counts = Wpistic_Formistic_Database::attachment_counts( [ (int) $row->id ] );
 			$count  = $counts[ (int) $row->id ] ?? 0;
 			$cells  = array_map( array( $this, 'neutralize_csv_cell' ), array_values( $this->build_row( $row, $count ) ) );
 			fputcsv( $out, $cells );
@@ -192,8 +192,8 @@ class WPISTIC_CF_Export {
 	protected function stream_json( array $args ) {
 		echo '[';
 		$first = true;
-		WPISTIC_CF_Database::each_submission( $args, function ( $row ) use ( &$first ) {
-			$counts = WPISTIC_CF_Database::attachment_counts( [ (int) $row->id ] );
+		Wpistic_Formistic_Database::each_submission( $args, function ( $row ) use ( &$first ) {
+			$counts = Wpistic_Formistic_Database::attachment_counts( [ (int) $row->id ] );
 			$count  = $counts[ (int) $row->id ] ?? 0;
 			$rec    = $this->build_row( $row, $count );
 			// Decode fields_json into a real object inside the JSON output.

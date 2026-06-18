@@ -2,7 +2,7 @@
 /**
  * AJAX endpoints — view a submission, send a reply, change status, delete.
  *
- * @package WPISTIC_CF
+ * @package Wpistic_Formistic
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Handles all admin-side AJAX for the Formistic dashboard.
  */
-class WPISTIC_CF_Ajax {
+class Wpistic_Formistic_Ajax {
 
 	/** Capability required. */
 	const CAP = 'manage_options';
@@ -21,11 +21,11 @@ class WPISTIC_CF_Ajax {
 	 * Register AJAX hooks.
 	 */
 	public function register() {
-		add_action( 'wp_ajax_WPISTIC_CF_get_submission', [ $this, 'get_submission' ] );
-		add_action( 'wp_ajax_WPISTIC_CF_send_reply', [ $this, 'send_reply' ] );
-		add_action( 'wp_ajax_WPISTIC_CF_delete', [ $this, 'delete' ] );
-		add_action( 'wp_ajax_WPISTIC_CF_add_note', [ $this, 'add_note' ] );
-		add_action( 'wp_ajax_WPISTIC_CF_replay_submission', [ $this, 'replay_submission' ] );
+		add_action( 'wp_ajax_wpistic_formistic_get_submission', [ $this, 'get_submission' ] );
+		add_action( 'wp_ajax_wpistic_formistic_send_reply', [ $this, 'send_reply' ] );
+		add_action( 'wp_ajax_wpistic_formistic_delete', [ $this, 'delete' ] );
+		add_action( 'wp_ajax_wpistic_formistic_add_note', [ $this, 'add_note' ] );
+		add_action( 'wp_ajax_wpistic_formistic_replay_submission', [ $this, 'replay_submission' ] );
 	}
 
 	/**
@@ -36,7 +36,7 @@ class WPISTIC_CF_Ajax {
 			wp_send_json_error( [ 'message' => __( 'Permission denied.', 'formistic' ) ], 403 );
 		}
 		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
-		if ( ! wp_verify_nonce( $nonce, 'WPISTIC_CF_admin' ) ) {
+		if ( ! wp_verify_nonce( $nonce, 'wpistic_formistic_admin' ) ) {
 			wp_send_json_error( [ 'message' => __( 'Security check failed. Please reload the page.', 'formistic' ) ], 403 );
 		}
 	}
@@ -48,14 +48,14 @@ class WPISTIC_CF_Ajax {
 		$this->guard();
 
 		$id  = isset( $_POST['id'] ) ? (int) $_POST['id'] : 0;
-		$row = WPISTIC_CF_Database::get_submission( $id );
+		$row = Wpistic_Formistic_Database::get_submission( $id );
 		if ( ! $row ) {
 			wp_send_json_error( [ 'message' => __( 'Submission not found.', 'formistic' ) ], 404 );
 		}
 
 		// First view marks a "new" submission as "read".
 		if ( 'new' === $row->status ) {
-			WPISTIC_CF_Database::set_status( $id, 'read' );
+			Wpistic_Formistic_Database::set_status( $id, 'read' );
 			$row->status = 'read';
 		}
 
@@ -79,7 +79,7 @@ class WPISTIC_CF_Ajax {
 		$this->guard();
 
 		$id  = isset( $_POST['submission_id'] ) ? (int) $_POST['submission_id'] : 0;
-		$row = WPISTIC_CF_Database::get_submission( $id );
+		$row = Wpistic_Formistic_Database::get_submission( $id );
 		if ( ! $row ) {
 			wp_send_json_error( [ 'message' => __( 'Submission not found.', 'formistic' ) ], 404 );
 		}
@@ -100,15 +100,15 @@ class WPISTIC_CF_Ajax {
 			wp_send_json_error( [ 'message' => __( 'Please fill in both the subject and the reply message.', 'formistic' ) ], 400 );
 		}
 
-		$signature = (string) get_option( 'WPISTIC_CF_reply_signature', '' );
+		$signature = (string) get_option( 'wpistic_formistic_reply_signature', '' );
 		$full_body = $body;
 		if ( '' !== trim( $signature ) ) {
 			$separator = $html_mode ? '<br><br>--<br>' : "\n\n--\n";
 			$full_body .= $separator . ( $html_mode ? nl2br( esc_html( $signature ) ) : $signature );
 		}
 
-		$from_name  = get_option( 'WPISTIC_CF_reply_from_name', get_bloginfo( 'name' ) );
-		$from_email = get_option( 'WPISTIC_CF_reply_from_email', get_option( 'admin_email' ) );
+		$from_name  = get_option( 'wpistic_formistic_reply_from_name', get_bloginfo( 'name' ) );
+		$from_email = get_option( 'wpistic_formistic_reply_from_email', get_option( 'admin_email' ) );
 		$headers    = [];
 		if ( is_email( $from_email ) ) {
 			$headers[] = sprintf( 'From: %s <%s>', $from_name, $from_email );
@@ -124,13 +124,13 @@ class WPISTIC_CF_Ajax {
 			$headers[] = 'Bcc: ' . $addr;
 		}
 
-		$sent = WPISTIC_CF_Capture::send_internal( $to, $subject, $full_body, $headers );
+		$sent = Wpistic_Formistic_Capture::send_internal( $to, $subject, $full_body, $headers );
 		if ( ! $sent ) {
 			wp_send_json_error( [ 'message' => __( 'The email could not be sent. Check your site mail configuration.', 'formistic' ) ], 500 );
 		}
 
-		WPISTIC_CF_Database::insert_reply( $id, $subject, $full_body );
-		WPISTIC_CF_Database::set_status( $id, 'replied' );
+		Wpistic_Formistic_Database::insert_reply( $id, $subject, $full_body );
+		Wpistic_Formistic_Database::set_status( $id, 'replied' );
 
 		wp_send_json_success( [
 			'message' => __( 'Reply sent successfully.', 'formistic' ),
@@ -144,7 +144,7 @@ class WPISTIC_CF_Ajax {
 	public function delete() {
 		$this->guard();
 		$id = isset( $_POST['id'] ) ? (int) $_POST['id'] : 0;
-		if ( ! $id || ! WPISTIC_CF_Database::delete_submission( $id ) ) {
+		if ( ! $id || ! Wpistic_Formistic_Database::delete_submission( $id ) ) {
 			wp_send_json_error( [ 'message' => __( 'Could not delete the submission.', 'formistic' ) ], 400 );
 		}
 		wp_send_json_success( [ 'message' => __( 'Submission deleted.', 'formistic' ) ] );
@@ -156,13 +156,13 @@ class WPISTIC_CF_Ajax {
 	public function add_note() {
 		$this->guard();
 		$id   = isset( $_POST['submission_id'] ) ? (int) $_POST['submission_id'] : 0;
-		$row  = WPISTIC_CF_Database::get_submission( $id );
+		$row  = Wpistic_Formistic_Database::get_submission( $id );
 		$note = isset( $_POST['note'] ) ? sanitize_textarea_field( wp_unslash( $_POST['note'] ) ) : '';
 		$tags = isset( $_POST['tags'] ) ? sanitize_text_field( wp_unslash( $_POST['tags'] ) ) : '';
 		if ( ! $row || '' === trim( $note ) ) {
 			wp_send_json_error( [ 'message' => __( 'Please provide a valid note.', 'formistic' ) ], 400 );
 		}
-		WPISTIC_CF_Database::insert_note( $id, $note, $tags );
+		Wpistic_Formistic_Database::insert_note( $id, $note, $tags );
 		wp_send_json_success( [
 			'message' => __( 'Note added.', 'formistic' ),
 			'html'    => $this->render_detail( $row ),
@@ -176,17 +176,17 @@ class WPISTIC_CF_Ajax {
 		$this->guard();
 		$id   = isset( $_POST['submission_id'] ) ? (int) $_POST['submission_id'] : 0;
 		$type = isset( $_POST['replay_type'] ) ? sanitize_key( wp_unslash( $_POST['replay_type'] ) ) : 'both';
-		$row  = WPISTIC_CF_Database::get_submission( $id );
+		$row  = Wpistic_Formistic_Database::get_submission( $id );
 		if ( ! $row ) {
 			wp_send_json_error( [ 'message' => __( 'Submission not found.', 'formistic' ) ], 404 );
 		}
 		$fields = json_decode( (string) $row->fields, true );
 		$fields = is_array( $fields ) ? $fields : [];
-		if ( in_array( $type, [ 'both', 'webhook' ], true ) && class_exists( 'WPISTIC_CF_Webhooks' ) ) {
-			WPISTIC_CF_Webhooks::dispatch_submission( (int) $row->id, (string) $row->form_name, $fields );
+		if ( in_array( $type, [ 'both', 'webhook' ], true ) && class_exists( 'Wpistic_Formistic_Webhooks' ) ) {
+			Wpistic_Formistic_Webhooks::dispatch_submission( (int) $row->id, (string) $row->form_name, $fields );
 		}
-		if ( in_array( $type, [ 'both', 'autoresponder' ], true ) && class_exists( 'WPISTIC_CF_Autoresponder' ) ) {
-			WPISTIC_CF_Autoresponder::replay_for_submission( (int) $row->id );
+		if ( in_array( $type, [ 'both', 'autoresponder' ], true ) && class_exists( 'Wpistic_Formistic_Autoresponder' ) ) {
+			Wpistic_Formistic_Autoresponder::replay_for_submission( (int) $row->id );
 		}
 		wp_send_json_success( [ 'message' => __( 'Replay dispatched.', 'formistic' ) ] );
 	}
@@ -229,29 +229,29 @@ class WPISTIC_CF_Ajax {
 	protected function render_detail( $row ) {
 		$fields      = json_decode( (string) $row->fields, true );
 		$fields      = is_array( $fields ) ? $fields : [];
-		$replies     = WPISTIC_CF_Database::get_replies( $row->id );
-		$attachments = WPISTIC_CF_Database::get_attachments( $row->id );
-		$notes       = WPISTIC_CF_Database::get_notes( $row->id );
-		$sender_rows = $row->sender_email ? WPISTIC_CF_Database::sender_activity( $row->sender_email ) : [];
-		$ai_meta     = WPISTIC_CF_Database::get_ai_meta( $row->id );
+		$replies     = Wpistic_Formistic_Database::get_replies( $row->id );
+		$attachments = Wpistic_Formistic_Database::get_attachments( $row->id );
+		$notes       = Wpistic_Formistic_Database::get_notes( $row->id );
+		$sender_rows = $row->sender_email ? Wpistic_Formistic_Database::sender_activity( $row->sender_email ) : [];
+		$ai_meta     = Wpistic_Formistic_Database::get_ai_meta( $row->id );
 
 		ob_start();
 		?>
-		<div class="WPISTIC_CF-detail">
-			<div class="WPISTIC_CF-detail__meta">
-				<span class="WPISTIC_CF-formtag"><?php echo esc_html( $row->form_name ?: __( 'Website Form', 'formistic' ) ); ?></span>
-				<span class="WPISTIC_CF-detail__date">
+		<div class="wpistic-formistic-detail">
+			<div class="wpistic-formistic-detail__meta">
+				<span class="wpistic-formistic-formtag"><?php echo esc_html( $row->form_name ?: __( 'Website Form', 'formistic' ) ); ?></span>
+				<span class="wpistic-formistic-detail__date">
 					<?php echo esc_html( date_i18n( get_option( 'date_format' ) . ', ' . get_option( 'time_format' ), strtotime( (string) $row->created_at ) ) ); ?>
 				</span>
 			</div>
 
-			<table class="WPISTIC_CF-detail__table">
+			<table class="wpistic-formistic-detail__table">
 				<tbody>
 					<?php if ( $row->sender_name ) : ?>
 						<tr><th><?php esc_html_e( 'Name', 'formistic' ); ?></th><td><?php echo esc_html( $row->sender_name ); ?></td></tr>
 					<?php endif; ?>
 					<?php if ( $row->sender_email ) : ?>
-						<tr><th><?php esc_html_e( 'Email', 'formistic' ); ?></th><td><a href="mailto:<?php echo esc_attr( $row->sender_email ); ?>"><?php echo esc_html( $row->sender_email ); ?></a> · <a href="<?php echo esc_url( add_query_arg( [ 'page' => 'wpistic-contact', 'sender' => (string) $row->sender_email ], admin_url( 'admin.php' ) ) ); ?>"><?php esc_html_e( 'Open unified sender view', 'formistic' ); ?></a></td></tr>
+						<tr><th><?php esc_html_e( 'Email', 'formistic' ); ?></th><td><a href="mailto:<?php echo esc_attr( $row->sender_email ); ?>"><?php echo esc_html( $row->sender_email ); ?></a> · <a href="<?php echo esc_url( add_query_arg( [ 'page' => 'formistic', 'sender' => (string) $row->sender_email ], admin_url( 'admin.php' ) ) ); ?>"><?php esc_html_e( 'Open unified sender view', 'formistic' ); ?></a></td></tr>
 					<?php endif; ?>
 					<?php if ( $row->sender_phone ) : ?>
 						<tr><th><?php esc_html_e( 'Phone', 'formistic' ); ?></th><td><?php echo esc_html( $row->sender_phone ); ?></td></tr>
@@ -275,28 +275,28 @@ class WPISTIC_CF_Ajax {
 			</table>
 
 			<?php if ( $row->message ) : ?>
-				<div class="WPISTIC_CF-detail__message">
+				<div class="wpistic-formistic-detail__message">
 					<h3><?php esc_html_e( 'Message', 'formistic' ); ?></h3>
-					<div class="WPISTIC_CF-detail__msgbody"><?php echo nl2br( esc_html( (string) $row->message ) ); ?></div>
+					<div class="wpistic-formistic-detail__msgbody"><?php echo nl2br( esc_html( (string) $row->message ) ); ?></div>
 				</div>
 			<?php endif; ?>
 
-			<?php if ( $attachments && class_exists( 'WPISTIC_CF_Attachments' ) ) : ?>
-				<div class="WPISTIC_CF-detail__attachments">
+			<?php if ( $attachments && class_exists( 'Wpistic_Formistic_Attachments' ) ) : ?>
+				<div class="wpistic-formistic-detail__attachments">
 					<h3><?php esc_html_e( 'Attachments', 'formistic' ); ?></h3>
-					<ul class="WPISTIC_CF-attachments">
+					<ul class="wpistic-formistic-attachments">
 						<?php foreach ( $attachments as $att ) :
-							$url = WPISTIC_CF_Attachments::download_url( $att );
+							$url = Wpistic_Formistic_Attachments::download_url( $att );
 							?>
-							<li class="WPISTIC_CF-attachment">
-								<a class="WPISTIC_CF-attachment__link" href="<?php echo esc_url( $url ); ?>"<?php echo 'external' === $att->source ? ' target="_blank" rel="noopener"' : ''; ?>>
+							<li class="wpistic-formistic-attachment">
+								<a class="wpistic-formistic-attachment__link" href="<?php echo esc_url( $url ); ?>"<?php echo 'external' === $att->source ? ' target="_blank" rel="noopener"' : ''; ?>>
 									<span class="dashicons dashicons-paperclip" aria-hidden="true"></span>
-									<span class="WPISTIC_CF-attachment__name"><?php echo esc_html( $att->original_name ?: __( '(file)', 'formistic' ) ); ?></span>
+									<span class="wpistic-formistic-attachment__name"><?php echo esc_html( $att->original_name ?: __( '(file)', 'formistic' ) ); ?></span>
 								</a>
-								<span class="WPISTIC_CF-attachment__meta">
+								<span class="wpistic-formistic-attachment__meta">
 									<?php
 									if ( 'local' === $att->source ) {
-										echo esc_html( WPISTIC_CF_Attachments::format_size( (int) $att->size_bytes ) );
+										echo esc_html( Wpistic_Formistic_Attachments::format_size( (int) $att->size_bytes ) );
 									} else {
 										esc_html_e( 'External link', 'formistic' );
 									}
@@ -309,67 +309,67 @@ class WPISTIC_CF_Ajax {
 			<?php endif; ?>
 
 			<?php if ( $replies ) : ?>
-				<div class="WPISTIC_CF-detail__replies">
+				<div class="wpistic-formistic-detail__replies">
 					<h3><?php esc_html_e( 'Reply History', 'formistic' ); ?></h3>
 					<?php foreach ( $replies as $reply ) : ?>
-						<div class="WPISTIC_CF-reply-item">
-							<div class="WPISTIC_CF-reply-item__head">
+						<div class="wpistic-formistic-reply-item">
+							<div class="wpistic-formistic-reply-item__head">
 								<strong><?php echo esc_html( $reply->reply_subject ); ?></strong>
 								<span><?php echo esc_html( date_i18n( get_option( 'date_format' ) . ', ' . get_option( 'time_format' ), strtotime( (string) $reply->sent_at ) ) ); ?></span>
 							</div>
-							<div class="WPISTIC_CF-reply-item__body"><?php echo nl2br( esc_html( (string) $reply->reply_body ) ); ?></div>
+							<div class="wpistic-formistic-reply-item__body"><?php echo nl2br( esc_html( (string) $reply->reply_body ) ); ?></div>
 						</div>
 					<?php endforeach; ?>
 				</div>
 			<?php endif; ?>
 
 			<?php if ( $sender_rows ) : ?>
-				<div class="WPISTIC_CF-detail__replies">
+				<div class="wpistic-formistic-detail__replies">
 					<h3><?php esc_html_e( 'Conversation Thread (Sender)', 'formistic' ); ?></h3>
 					<?php foreach ( $sender_rows as $srow ) : ?>
-						<div class="WPISTIC_CF-reply-item">
-							<div class="WPISTIC_CF-reply-item__head">
+						<div class="wpistic-formistic-reply-item">
+							<div class="wpistic-formistic-reply-item__head">
 								<strong><?php echo esc_html( $srow->form_name ?: __( 'Website Form', 'formistic' ) ); ?></strong>
 								<span><?php echo esc_html( date_i18n( get_option( 'date_format' ) . ', ' . get_option( 'time_format' ), strtotime( (string) $srow->created_at ) ) ); ?></span>
 							</div>
-							<div class="WPISTIC_CF-reply-item__body"><?php echo nl2br( esc_html( wp_trim_words( (string) $srow->message, 28, '…' ) ) ); ?></div>
+							<div class="wpistic-formistic-reply-item__body"><?php echo nl2br( esc_html( wp_trim_words( (string) $srow->message, 28, '…' ) ) ); ?></div>
 						</div>
 					<?php endforeach; ?>
 				</div>
 			<?php endif; ?>
 
-			<div class="WPISTIC_CF-reply-tools" style="margin-top:14px;">
-				<button type="button" class="button button-small WPISTIC_CF-replay" data-type="webhook" data-submission="<?php echo esc_attr( (int) $row->id ); ?>"><?php esc_html_e( 'Re-fire Webhooks', 'formistic' ); ?></button>
-				<button type="button" class="button button-small WPISTIC_CF-replay" data-type="autoresponder" data-submission="<?php echo esc_attr( (int) $row->id ); ?>"><?php esc_html_e( 'Re-send Auto-Responder', 'formistic' ); ?></button>
-				<button type="button" class="button button-small WPISTIC_CF-replay" data-type="both" data-submission="<?php echo esc_attr( (int) $row->id ); ?>"><?php esc_html_e( 'Replay Both', 'formistic' ); ?></button>
+			<div class="wpistic-formistic-reply-tools" style="margin-top:14px;">
+				<button type="button" class="button button-small wpistic-formistic-replay" data-type="webhook" data-submission="<?php echo esc_attr( (int) $row->id ); ?>"><?php esc_html_e( 'Re-fire Webhooks', 'formistic' ); ?></button>
+				<button type="button" class="button button-small wpistic-formistic-replay" data-type="autoresponder" data-submission="<?php echo esc_attr( (int) $row->id ); ?>"><?php esc_html_e( 'Re-send Auto-Responder', 'formistic' ); ?></button>
+				<button type="button" class="button button-small wpistic-formistic-replay" data-type="both" data-submission="<?php echo esc_attr( (int) $row->id ); ?>"><?php esc_html_e( 'Replay Both', 'formistic' ); ?></button>
 			</div>
 
-			<div class="WPISTIC_CF-detail__replies">
+			<div class="wpistic-formistic-detail__replies">
 				<h3><?php esc_html_e( 'Internal Notes & Tags', 'formistic' ); ?></h3>
-				<div class="WPISTIC_CF-note-form" data-submission="<?php echo esc_attr( (int) $row->id ); ?>">
-					<textarea rows="3" name="WPISTIC_CF_note_body" placeholder="<?php esc_attr_e( 'Add internal note for your team…', 'formistic' ); ?>"></textarea>
-					<input type="text" name="WPISTIC_CF_note_tags" placeholder="<?php esc_attr_e( 'tags: vip, follow-up, support', 'formistic' ); ?>">
-					<button type="button" class="button button-small WPISTIC_CF-note-add"><?php esc_html_e( 'Add Note', 'formistic' ); ?></button>
+				<div class="wpistic-formistic-note-form" data-submission="<?php echo esc_attr( (int) $row->id ); ?>">
+					<textarea rows="3" name="wpistic_formistic_note_body" placeholder="<?php esc_attr_e( 'Add internal note for your team…', 'formistic' ); ?>"></textarea>
+					<input type="text" name="wpistic_formistic_note_tags" placeholder="<?php esc_attr_e( 'tags: vip, follow-up, support', 'formistic' ); ?>">
+					<button type="button" class="button button-small wpistic-formistic-note-add"><?php esc_html_e( 'Add Note', 'formistic' ); ?></button>
 				</div>
 				<?php if ( $notes ) : foreach ( $notes as $note ) : ?>
-					<div class="WPISTIC_CF-reply-item">
-						<div class="WPISTIC_CF-reply-item__head">
+					<div class="wpistic-formistic-reply-item">
+						<div class="wpistic-formistic-reply-item__head">
 							<strong><?php echo esc_html( $note->display_name ?: __( 'Admin', 'formistic' ) ); ?></strong>
 							<span><?php echo esc_html( date_i18n( get_option( 'date_format' ) . ', ' . get_option( 'time_format' ), strtotime( (string) $note->created_at ) ) ); ?></span>
 						</div>
 						<?php if ( $note->tags ) : ?><div style="font-size:11px;color:#6B7088;margin-bottom:6px;"><?php echo esc_html( $note->tags ); ?></div><?php endif; ?>
-						<div class="WPISTIC_CF-reply-item__body"><?php echo nl2br( esc_html( (string) $note->note_body ) ); ?></div>
+						<div class="wpistic-formistic-reply-item__body"><?php echo nl2br( esc_html( (string) $note->note_body ) ); ?></div>
 					</div>
 				<?php endforeach; else : ?>
 					<p style="color:#6B7088;"><?php esc_html_e( 'No internal notes yet.', 'formistic' ); ?></p>
 				<?php endif; ?>
 			</div>
 			<?php if ( $ai_meta ) : ?>
-				<div class="WPISTIC_CF-detail__replies">
+				<div class="wpistic-formistic-detail__replies">
 					<h3><?php esc_html_e( 'AI Insights', 'formistic' ); ?></h3>
 					<p><strong><?php esc_html_e( 'Spam Score:', 'formistic' ); ?></strong> <?php echo esc_html( (int) $ai_meta->spam_score ); ?>/100</p>
 					<?php if ( $ai_meta->ai_tags ) : ?><p><strong><?php esc_html_e( 'Smart Tags:', 'formistic' ); ?></strong> <?php echo esc_html( $ai_meta->ai_tags ); ?></p><?php endif; ?>
-					<?php if ( $ai_meta->ai_reply ) : ?><div class="WPISTIC_CF-reply-item__body"><?php echo nl2br( esc_html( (string) $ai_meta->ai_reply ) ); ?></div><?php endif; ?>
+					<?php if ( $ai_meta->ai_reply ) : ?><div class="wpistic-formistic-reply-item__body"><?php echo nl2br( esc_html( (string) $ai_meta->ai_reply ) ); ?></div><?php endif; ?>
 				</div>
 			<?php endif; ?>
 		</div>

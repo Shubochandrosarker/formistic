@@ -9,7 +9,7 @@
  *    captures that the host plugin's own protections let through still get
  *    filtered before landing in the inbox.
  *
- * @package WPISTIC_CF
+ * @package Wpistic_Formistic
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Stateless spam helpers.
  */
-class WPISTIC_CF_Spam {
+class Wpistic_Formistic_Spam {
 
 	/**
 	 * Whether reCAPTCHA v3 is configured & enabled.
@@ -27,9 +27,12 @@ class WPISTIC_CF_Spam {
 	 * @return bool
 	 */
 	public static function recaptcha_active() {
-		return '1' === get_option( 'WPISTIC_CF_spam_recaptcha_enabled', '0' )
-			&& '' !== trim( (string) get_option( 'WPISTIC_CF_spam_recaptcha_site_key', '' ) )
-			&& '' !== trim( (string) get_option( 'WPISTIC_CF_spam_recaptcha_secret_key', '' ) );
+		if ( ! self::addon_active() ) {
+			return false;
+		}
+		return '1' === get_option( 'wpistic_formistic_spam_recaptcha_enabled', '0' )
+			&& '' !== trim( (string) get_option( 'wpistic_formistic_spam_recaptcha_site_key', '' ) )
+			&& '' !== trim( (string) get_option( 'wpistic_formistic_spam_recaptcha_secret_key', '' ) );
 	}
 
 	/**
@@ -38,9 +41,12 @@ class WPISTIC_CF_Spam {
 	 * @return bool
 	 */
 	public static function turnstile_active() {
-		return '1' === get_option( 'WPISTIC_CF_spam_turnstile_enabled', '0' )
-			&& '' !== trim( (string) get_option( 'WPISTIC_CF_spam_turnstile_site_key', '' ) )
-			&& '' !== trim( (string) get_option( 'WPISTIC_CF_spam_turnstile_secret_key', '' ) );
+		if ( ! self::addon_active() ) {
+			return false;
+		}
+		return '1' === get_option( 'wpistic_formistic_spam_turnstile_enabled', '0' )
+			&& '' !== trim( (string) get_option( 'wpistic_formistic_spam_turnstile_site_key', '' ) )
+			&& '' !== trim( (string) get_option( 'wpistic_formistic_spam_turnstile_secret_key', '' ) );
 	}
 
 	/**
@@ -49,7 +55,17 @@ class WPISTIC_CF_Spam {
 	 * @return bool
 	 */
 	public static function akismet_active() {
-		return '1' === get_option( 'WPISTIC_CF_spam_akismet_enabled', '0' ) && class_exists( 'Akismet' );
+		return self::addon_active() && '1' === get_option( 'wpistic_formistic_spam_akismet_enabled', '0' ) && class_exists( 'Akismet' );
+	}
+
+	/**
+	 * Whether the Spam Protection addon is enabled. When off, the entire
+	 * spam stack (honeypot/rate-limit/IP/CAPTCHA/Akismet) is inert.
+	 *
+	 * @return bool
+	 */
+	public static function addon_active() {
+		return Wpistic_Formistic_Addons::is_active( 'spam' );
 	}
 
 	/* ------------------------------------------------------------------
@@ -65,8 +81,8 @@ class WPISTIC_CF_Spam {
 		if ( ! self::recaptcha_active() ) {
 			return;
 		}
-		$site = esc_attr( get_option( 'WPISTIC_CF_spam_recaptcha_site_key', '' ) );
-		echo '<input type="hidden" name="WPISTIC_CF_recaptcha_token" value="">';
+		$site = esc_attr( get_option( 'wpistic_formistic_spam_recaptcha_site_key', '' ) );
+		echo '<input type="hidden" name="wpistic_formistic_recaptcha_token" value="">';
 		if ( $printed ) {
 			return;
 		}
@@ -78,12 +94,12 @@ class WPISTIC_CF_Spam {
 			function inject(){
 				if (typeof grecaptcha === 'undefined' || !grecaptcha.ready) { setTimeout(inject, 250); return; }
 				grecaptcha.ready(function(){
-					document.querySelectorAll('form.WPISTIC_CF-form').forEach(function(form){
+					document.querySelectorAll('form.wpistic-formistic-form').forEach(function(form){
 						form.addEventListener('submit', function(e){
-							var field = form.querySelector('input[name="WPISTIC_CF_recaptcha_token"]');
+							var field = form.querySelector('input[name="wpistic_formistic_recaptcha_token"]');
 							if (!field || field.value) { return; }
 							e.preventDefault();
-							grecaptcha.execute('<?php echo esc_js( $site ); ?>', { action: 'WPISTIC_CF_submit' }).then(function(token){
+							grecaptcha.execute('<?php echo esc_js( $site ); ?>', { action: 'wpistic_formistic_submit' }).then(function(token){
 								field.value = token;
 								if (typeof form.requestSubmit === 'function') {
 									form.requestSubmit();
@@ -109,7 +125,7 @@ class WPISTIC_CF_Spam {
 		if ( ! self::turnstile_active() ) {
 			return;
 		}
-		$site = esc_attr( get_option( 'WPISTIC_CF_spam_turnstile_site_key', '' ) );
+		$site = esc_attr( get_option( 'wpistic_formistic_spam_turnstile_site_key', '' ) );
 		echo '<div class="cf-turnstile" data-sitekey="' . $site . '"></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already escaped
 		if ( $printed ) {
 			return;
@@ -127,14 +143,14 @@ class WPISTIC_CF_Spam {
 		if ( ! self::recaptcha_active() ) {
 			return true;
 		}
-		$token = isset( $_POST['WPISTIC_CF_recaptcha_token'] ) ? sanitize_text_field( wp_unslash( $_POST['WPISTIC_CF_recaptcha_token'] ) ) : '';
+		$token = isset( $_POST['wpistic_formistic_recaptcha_token'] ) ? sanitize_text_field( wp_unslash( $_POST['wpistic_formistic_recaptcha_token'] ) ) : '';
 		if ( '' === $token ) {
-			return new WP_Error( 'WPISTIC_CF_recaptcha_missing', __( 'reCAPTCHA token missing.', 'formistic' ) );
+			return new WP_Error( 'wpistic_formistic_recaptcha_missing', __( 'reCAPTCHA token missing.', 'formistic' ) );
 		}
 		$resp = wp_remote_post( 'https://www.google.com/recaptcha/api/siteverify', [
 			'timeout' => 8,
 			'body'    => [
-				'secret'   => get_option( 'WPISTIC_CF_spam_recaptcha_secret_key', '' ),
+				'secret'   => get_option( 'wpistic_formistic_spam_recaptcha_secret_key', '' ),
 				'response' => $token,
 				'remoteip' => self::client_ip(),
 			],
@@ -144,9 +160,9 @@ class WPISTIC_CF_Spam {
 		}
 		$body = json_decode( (string) wp_remote_retrieve_body( $resp ), true );
 		$score     = isset( $body['score'] ) ? (float) $body['score'] : 0;
-		$threshold = (float) get_option( 'WPISTIC_CF_spam_recaptcha_threshold', 0.5 );
+		$threshold = (float) get_option( 'wpistic_formistic_spam_recaptcha_threshold', 0.5 );
 		if ( empty( $body['success'] ) || $score < $threshold ) {
-			return new WP_Error( 'WPISTIC_CF_recaptcha_failed', __( 'reCAPTCHA verification failed.', 'formistic' ) );
+			return new WP_Error( 'wpistic_formistic_recaptcha_failed', __( 'reCAPTCHA verification failed.', 'formistic' ) );
 		}
 		return true;
 	}
@@ -162,12 +178,12 @@ class WPISTIC_CF_Spam {
 		}
 		$token = isset( $_POST['cf-turnstile-response'] ) ? sanitize_text_field( wp_unslash( $_POST['cf-turnstile-response'] ) ) : '';
 		if ( '' === $token ) {
-			return new WP_Error( 'WPISTIC_CF_turnstile_missing', __( 'Turnstile token missing.', 'formistic' ) );
+			return new WP_Error( 'wpistic_formistic_turnstile_missing', __( 'Turnstile token missing.', 'formistic' ) );
 		}
 		$resp = wp_remote_post( 'https://challenges.cloudflare.com/turnstile/v0/siteverify', [
 			'timeout' => 8,
 			'body'    => [
-				'secret'   => get_option( 'WPISTIC_CF_spam_turnstile_secret_key', '' ),
+				'secret'   => get_option( 'wpistic_formistic_spam_turnstile_secret_key', '' ),
 				'response' => $token,
 				'remoteip' => self::client_ip(),
 			],
@@ -177,13 +193,13 @@ class WPISTIC_CF_Spam {
 		}
 		$body = json_decode( (string) wp_remote_retrieve_body( $resp ), true );
 		if ( empty( $body['success'] ) ) {
-			return new WP_Error( 'WPISTIC_CF_turnstile_failed', __( 'Turnstile verification failed.', 'formistic' ) );
+			return new WP_Error( 'wpistic_formistic_turnstile_failed', __( 'Turnstile verification failed.', 'formistic' ) );
 		}
 		return true;
 	}
 
 	/* ------------------------------------------------------------------
-	 * Pre-store gate (used by WPISTIC_CF_Capture::store)
+	 * Pre-store gate (used by Wpistic_Formistic_Capture::store)
 	 * ------------------------------------------------------------------ */
 
 	/**
@@ -196,11 +212,14 @@ class WPISTIC_CF_Spam {
 	 * @return true|WP_Error    True to allow, WP_Error to block.
 	 */
 	public static function pre_store_check( $form_name, array $fields, $ip, $email ) {
+		if ( ! self::addon_active() ) {
+			return true;
+		}
 		if ( $ip && self::ip_is_blocked( $ip ) ) {
-			return new WP_Error( 'WPISTIC_CF_ip_blocked', __( 'Submitter IP is on the blocklist.', 'formistic' ) );
+			return new WP_Error( 'wpistic_formistic_ip_blocked', __( 'Submitter IP is on the blocklist.', 'formistic' ) );
 		}
 		if ( $ip && ! self::within_rate_limit( $ip ) ) {
-			return new WP_Error( 'WPISTIC_CF_rate_limited', __( 'Submission rate limit exceeded for this IP.', 'formistic' ) );
+			return new WP_Error( 'wpistic_formistic_rate_limited', __( 'Submission rate limit exceeded for this IP.', 'formistic' ) );
 		}
 		if ( self::akismet_active() ) {
 			$message = '';
@@ -208,7 +227,7 @@ class WPISTIC_CF_Spam {
 				$message .= $v . "\n";
 			}
 			if ( self::akismet_is_spam( $email, $message, $ip ) ) {
-				return new WP_Error( 'WPISTIC_CF_akismet_spam', __( 'Submission flagged as spam by Akismet.', 'formistic' ) );
+				return new WP_Error( 'wpistic_formistic_akismet_spam', __( 'Submission flagged as spam by Akismet.', 'formistic' ) );
 			}
 		}
 		return true;
@@ -225,7 +244,7 @@ class WPISTIC_CF_Spam {
 	 * @return bool
 	 */
 	public static function ip_is_blocked( $ip ) {
-		$raw = (string) get_option( 'WPISTIC_CF_spam_ip_blocklist', '' );
+		$raw = (string) get_option( 'wpistic_formistic_spam_ip_blocklist', '' );
 		if ( '' === trim( $raw ) ) {
 			return false;
 		}
@@ -240,12 +259,12 @@ class WPISTIC_CF_Spam {
 	 * @return bool True if allowed, false if exceeded.
 	 */
 	public static function within_rate_limit( $ip ) {
-		if ( '1' !== get_option( 'WPISTIC_CF_spam_rate_limit_enabled', '1' ) ) {
+		if ( '1' !== get_option( 'wpistic_formistic_spam_rate_limit_enabled', '1' ) ) {
 			return true;
 		}
-		$max    = max( 1, (int) get_option( 'WPISTIC_CF_spam_rate_limit_max', 3 ) );
-		$window = max( 60, (int) get_option( 'WPISTIC_CF_spam_rate_limit_window', 3600 ) );
-		$key    = 'WPISTIC_CF_rl_' . hash_hmac( 'sha256', $ip, wp_salt( 'nonce' ) );
+		$max    = max( 1, (int) get_option( 'wpistic_formistic_spam_rate_limit_max', 3 ) );
+		$window = max( 60, (int) get_option( 'wpistic_formistic_spam_rate_limit_window', 3600 ) );
+		$key    = 'wpistic_formistic_rl_' . hash_hmac( 'sha256', $ip, wp_salt( 'nonce' ) );
 		$count  = (int) get_transient( $key );
 		if ( $count >= $max ) {
 			return false;
@@ -292,9 +311,9 @@ class WPISTIC_CF_Spam {
 		// Proxy headers (X-Forwarded-For, CF-Connecting-IP) are spoofable.
 		// Trust them only when REMOTE_ADDR matches a configured proxy IP
 		// (or a CIDR range). Allowlist comes from:
-		//   - constant WPCF_TRUSTED_PROXIES (comma-separated string, takes precedence)
-		//   - option  WPISTIC_CF_trusted_proxies (admin setting, same format)
-		//   - filter  WPISTIC_CF_trusted_proxies (array, after both above)
+		//   - constant WPISTIC_FORMISTIC_TRUSTED_PROXIES (comma-separated string, takes precedence)
+		//   - option  wpistic_formistic_trusted_proxies (admin setting, same format)
+		//   - filter  wpistic_formistic_trusted_proxies (array, after both above)
 		// Default = empty allowlist = NEVER trust proxy headers, so a bare
 		// install on a non-proxied server can't be IP-spoofed.
 		if ( self::request_is_from_trusted_proxy( $remote_addr ) ) {
@@ -329,14 +348,14 @@ class WPISTIC_CF_Spam {
 			return false;
 		}
 		$raw = '';
-		if ( defined( 'WPCF_TRUSTED_PROXIES' ) ) {
-			$raw = (string) WPCF_TRUSTED_PROXIES;
+		if ( defined( 'WPISTIC_FORMISTIC_TRUSTED_PROXIES' ) ) {
+			$raw = (string) WPISTIC_FORMISTIC_TRUSTED_PROXIES;
 		}
 		if ( '' === $raw ) {
-			$raw = (string) get_option( 'WPISTIC_CF_trusted_proxies', '' );
+			$raw = (string) get_option( 'wpistic_formistic_trusted_proxies', '' );
 		}
 		$list = array_filter( array_map( 'trim', explode( ',', $raw ) ) );
-		$list = apply_filters( 'WPISTIC_CF_trusted_proxies', $list );
+		$list = apply_filters( 'wpistic_formistic_trusted_proxies', $list );
 		if ( empty( $list ) ) {
 			return false;
 		}

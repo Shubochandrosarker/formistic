@@ -2,7 +2,7 @@
 /**
  * Admin UI — the "Formistic" dashboard: inbox, view, reply, settings.
  *
- * @package WPISTIC_CF
+ * @package Wpistic_Formistic
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -12,10 +12,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Registers and renders the branded admin experience.
  */
-class WPISTIC_CF_Admin {
+class Wpistic_Formistic_Admin {
 
 	/** Admin page slug. */
-	const PAGE = 'wpistic-contact';
+	const PAGE = 'formistic';
 
 	/** Capability required to manage submissions. */
 	const CAP = 'manage_options';
@@ -28,16 +28,16 @@ class WPISTIC_CF_Admin {
 		// Run after every other component (Forms CPT, Newsletter) has registered
 		// its submenu so we can enforce the public-facing order.
 		add_action( 'admin_menu', [ $this, 'reorder_menu' ], 999 );
-		add_action( 'admin_init', [ 'WPISTIC_CF_Database', 'maybe_upgrade' ] );
+		add_action( 'admin_init', [ 'Wpistic_Formistic_Database', 'maybe_upgrade' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'assets' ] );
-		add_filter( 'plugin_action_links_' . WPISTIC_CF_BASENAME, [ $this, 'action_links' ] );
+		add_filter( 'plugin_action_links_' . WPISTIC_FORMISTIC_BASENAME, [ $this, 'action_links' ] );
 	}
 
 	/**
-	 * Enforce the Formistic submenu order: Inbox → Forms → Newsletter →
-	 * Threads → Analytics → Settings. Components register their menus at
-	 * different priorities (the Forms CPT and Newsletter add themselves
-	 * last), so we normalize the final order here on a late admin_menu hook.
+	 * Enforce the Formistic submenu order: Inbox → Threads → Form →
+	 * Analytics → Settings → Addons, then addon-provided submenus (e.g.
+	 * Newsletter) serially. Components register their menus at different
+	 * priorities, so we normalize the final order on a late admin_menu hook.
 	 */
 	public function reorder_menu() {
 		global $submenu;
@@ -46,12 +46,13 @@ class WPISTIC_CF_Admin {
 		}
 
 		$order = [
-			self::PAGE,                                          // Inbox.
-			'edit.php?post_type=' . WPISTIC_CF_Forms::POST_TYPE, // Forms.
-			WPISTIC_CF_Newsletter::PAGE,                         // Newsletter.
-			self::PAGE . '-threads',                             // Threads.
-			self::PAGE . '-analytics',                           // Analytics.
-			self::PAGE . '-settings',                            // Settings.
+			self::PAGE,                                                 // Inbox.
+			self::PAGE . '-threads',                                    // Threads.
+			'edit.php?post_type=' . Wpistic_Formistic_Forms::POST_TYPE, // Form.
+			self::PAGE . '-analytics',                                  // Analytics.
+			self::PAGE . '-settings',                                   // Settings.
+			Wpistic_Formistic_Addons::PAGE,                             // Addons.
+			Wpistic_Formistic_Newsletter::PAGE,                         // Newsletter (addon).
 		];
 
 		// Index existing items by slug, de-duplicating the auto-created
@@ -88,7 +89,7 @@ class WPISTIC_CF_Admin {
 	 * Add the top-level menu and submenus.
 	 */
 	public function menu() {
-		$counts = WPISTIC_CF_Database::status_counts();
+		$counts = Wpistic_Formistic_Database::status_counts();
 		$bubble = $counts['new'] > 0
 			? ' <span class="awaiting-mod">' . (int) $counts['new'] . '</span>'
 			: '';
@@ -140,17 +141,17 @@ class WPISTIC_CF_Admin {
 	}
 
 	/**
-	 * Proxy to WPISTIC_CF_Settings::render so the brand header stays in WPISTIC_CF_Admin.
+	 * Proxy to Wpistic_Formistic_Settings::render so the brand header stays in Wpistic_Formistic_Admin.
 	 */
 	public function render_settings_proxy() {
-		( new WPISTIC_CF_Settings() )->render( [ $this, 'header' ] );
+		( new Wpistic_Formistic_Settings() )->render( [ $this, 'header' ] );
 	}
 
 	/**
-	 * Proxy to WPISTIC_CF_Analytics::render so the brand header stays in WPISTIC_CF_Admin.
+	 * Proxy to Wpistic_Formistic_Analytics::render so the brand header stays in Wpistic_Formistic_Admin.
 	 */
 	public function render_analytics_proxy() {
-		( new WPISTIC_CF_Analytics() )->render( [ $this, 'header' ] );
+		( new Wpistic_Formistic_Analytics() )->render( [ $this, 'header' ] );
 	}
 
 	/**
@@ -184,19 +185,19 @@ class WPISTIC_CF_Admin {
 		$is_form_screen = false;
 		if ( in_array( $hook, [ 'post.php', 'post-new.php', 'edit.php' ], true ) ) {
 			$screen         = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-			$is_form_screen = $screen && isset( $screen->post_type ) && 'WPISTIC_CF_form' === $screen->post_type;
+			$is_form_screen = $screen && isset( $screen->post_type ) && 'wpistic_formistic_form' === $screen->post_type;
 		}
 		if ( ! $is_plugin_page && ! $is_form_screen ) {
 			return;
 		}
-		wp_enqueue_style( 'WPISTIC_CF-admin', WPISTIC_CF_URL . 'assets/admin.css', [], WPISTIC_CF_VERSION );
-		wp_enqueue_script( 'WPISTIC_CF-admin', WPISTIC_CF_URL . 'assets/admin.js', [], WPISTIC_CF_VERSION, true );
+		wp_enqueue_style( 'wpistic-formistic-admin', WPISTIC_FORMISTIC_URL . 'assets/admin.css', [], WPISTIC_FORMISTIC_VERSION );
+		wp_enqueue_script( 'wpistic-formistic-admin', WPISTIC_FORMISTIC_URL . 'assets/admin.js', [], WPISTIC_FORMISTIC_VERSION, true );
 		wp_localize_script(
-			'WPISTIC_CF-admin',
-			'WPISTIC_CF',
+			'wpistic-formistic-admin',
+			'Wpistic_Formistic',
 			[
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'WPISTIC_CF_admin' ),
+				'nonce'   => wp_create_nonce( 'wpistic_formistic_admin' ),
 				'i18n'    => [
 					'sending'         => __( 'Sending…', 'formistic' ),
 					'loading'         => __( 'Loading…', 'formistic' ),
@@ -223,21 +224,21 @@ class WPISTIC_CF_Admin {
 
 	/**
 	 * Shared branded page header (called by both render_inbox and the
-	 * settings page via WPISTIC_CF_Settings::render).
+	 * settings page via Wpistic_Formistic_Settings::render).
 	 *
 	 * @param string $subtitle Sub-heading text.
 	 */
 	public function header( $subtitle ) {
 		?>
-		<div class="WPISTIC_CF-brandbar">
-			<div class="WPISTIC_CF-logo">
-				<span class="WPISTIC_CF-logo__mark" aria-hidden="true">F</span>
-				<span class="WPISTIC_CF-logo__text">
+		<div class="wpistic-formistic-brandbar">
+			<div class="wpistic-formistic-logo">
+				<span class="wpistic-formistic-logo__mark" aria-hidden="true">F</span>
+				<span class="wpistic-formistic-logo__text">
 					<strong>Formistic</strong>
 					<small><?php esc_html_e( 'by Wordpressistic', 'formistic' ); ?></small>
 				</span>
 			</div>
-			<div class="WPISTIC_CF-brandbar__title">
+			<div class="wpistic-formistic-brandbar__title">
 				<h1><?php esc_html_e( 'Smart Contact Forms for WordPress Leads', 'formistic' ); ?></h1>
 				<p><?php echo esc_html( $subtitle ); ?></p>
 			</div>
@@ -253,7 +254,7 @@ class WPISTIC_CF_Admin {
 			return;
 		}
 
-		$counts = WPISTIC_CF_Database::status_counts();
+		$counts = Wpistic_Formistic_Database::status_counts();
 		$search = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
 		$form   = isset( $_GET['form'] ) ? sanitize_text_field( wp_unslash( $_GET['form'] ) ) : '';
 		$status = isset( $_GET['status'] ) ? sanitize_text_field( wp_unslash( $_GET['status'] ) ) : '';
@@ -263,13 +264,13 @@ class WPISTIC_CF_Admin {
 
 		$per_page = 20;
 		if ( 'threads' === $view ) {
-			$result = WPISTIC_CF_Database::query_threads( [
+			$result = Wpistic_Formistic_Database::query_threads( [
 				'search'   => $search,
 				'paged'    => $paged,
 				'per_page' => $per_page,
 			] );
 		} else {
-			$result = WPISTIC_CF_Database::query_submissions( [
+			$result = Wpistic_Formistic_Database::query_submissions( [
 				'search'   => $search,
 				'form'     => $form,
 				'status'   => $status,
@@ -281,13 +282,13 @@ class WPISTIC_CF_Admin {
 		$total = $result['total'];
 		$pages = (int) ceil( $total / $per_page );
 
-		$notice_slug = isset( $_GET['WPISTIC_CF_notice'] ) ? sanitize_key( $_GET['WPISTIC_CF_notice'] ) : '';
+		$notice_slug = isset( $_GET['wpistic_formistic_notice'] ) ? sanitize_key( $_GET['wpistic_formistic_notice'] ) : '';
 		$notice_n    = isset( $_GET['n'] ) ? (int) $_GET['n'] : 0;
-		$notice      = class_exists( 'WPISTIC_CF_Bulk' ) ? WPISTIC_CF_Bulk::notice_for( $notice_slug, $notice_n ) : null;
+		$notice      = class_exists( 'Wpistic_Formistic_Bulk' ) ? Wpistic_Formistic_Bulk::notice_for( $notice_slug, $notice_n ) : null;
 
 		$export_base = add_query_arg(
 			array_filter( [
-				'action' => 'WPISTIC_CF_export',
+				'action' => 'wpistic_formistic_export',
 				's'      => $search,
 				'form'   => $form,
 				'status' => $status,
@@ -295,10 +296,10 @@ class WPISTIC_CF_Admin {
 			] ),
 			admin_url( 'admin-post.php' )
 		);
-		$export_csv  = wp_nonce_url( add_query_arg( 'format', 'csv',  $export_base ), 'WPISTIC_CF_export' );
-		$export_json = wp_nonce_url( add_query_arg( 'format', 'json', $export_base ), 'WPISTIC_CF_export' );
+		$export_csv  = wp_nonce_url( add_query_arg( 'format', 'csv',  $export_base ), 'wpistic_formistic_export' );
+		$export_json = wp_nonce_url( add_query_arg( 'format', 'json', $export_base ), 'wpistic_formistic_export' );
 		?>
-		<div class="wrap WPISTIC_CF-wrap">
+		<div class="wrap wpistic-formistic-wrap">
 			<?php $this->header( __( 'Every contact form & website submission, in one inbox.', 'formistic' ) ); ?>
 
 			<?php if ( $notice ) : ?>
@@ -306,13 +307,13 @@ class WPISTIC_CF_Admin {
 					<p><?php echo esc_html( $notice['text'] ); ?></p>
 				</div>
 			<?php endif; ?>
-			<div class="WPISTIC_CF-tabs" style="margin-top:14px;">
-				<a class="WPISTIC_CF-tab<?php echo 'threads' !== $view ? ' is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE ) ); ?>"><?php esc_html_e( 'Submissions', 'formistic' ); ?></a>
-				<a class="WPISTIC_CF-tab<?php echo 'threads' === $view ? ' is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE . '&view=threads' ) ); ?>"><?php esc_html_e( 'Threads', 'formistic' ); ?></a>
+			<div class="wpistic-formistic-tabs" style="margin-top:14px;">
+				<a class="wpistic-formistic-tab<?php echo 'threads' !== $view ? ' is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE ) ); ?>"><?php esc_html_e( 'Submissions', 'formistic' ); ?></a>
+				<a class="wpistic-formistic-tab<?php echo 'threads' === $view ? ' is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE . '&view=threads' ) ); ?>"><?php esc_html_e( 'Threads', 'formistic' ); ?></a>
 			</div>
 
 			<?php if ( 'threads' !== $view ) : ?>
-			<div class="WPISTIC_CF-stats">
+			<div class="wpistic-formistic-stats">
 				<?php
 				$cards = [
 					''        => [ __( 'All Submissions', 'formistic' ), $counts['total'], 'all' ],
@@ -324,15 +325,15 @@ class WPISTIC_CF_Admin {
 					$url    = add_query_arg( array_filter( [ 'page' => self::PAGE, 'status' => $key ] ), admin_url( 'admin.php' ) );
 					$active = ( $status === $key ) ? ' is-active' : '';
 					?>
-					<a class="WPISTIC_CF-stat WPISTIC_CF-stat--<?php echo esc_attr( $card[2] . $active ); ?>" href="<?php echo esc_url( $url ); ?>">
-						<span class="WPISTIC_CF-stat__num"><?php echo esc_html( number_format_i18n( $card[1] ) ); ?></span>
-						<span class="WPISTIC_CF-stat__label"><?php echo esc_html( $card[0] ); ?></span>
+					<a class="wpistic-formistic-stat wpistic-formistic-stat--<?php echo esc_attr( $card[2] . $active ); ?>" href="<?php echo esc_url( $url ); ?>">
+						<span class="wpistic-formistic-stat__num"><?php echo esc_html( number_format_i18n( $card[1] ) ); ?></span>
+						<span class="wpistic-formistic-stat__label"><?php echo esc_html( $card[0] ); ?></span>
 					</a>
 				<?php endforeach; ?>
 			</div>
 			<?php endif; ?>
 
-			<form class="WPISTIC_CF-toolbar" method="get">
+			<form class="wpistic-formistic-toolbar" method="get">
 				<input type="hidden" name="page" value="<?php echo esc_attr( self::PAGE ); ?>">
 				<?php if ( $status ) : ?>
 					<input type="hidden" name="status" value="<?php echo esc_attr( $status ); ?>">
@@ -344,14 +345,14 @@ class WPISTIC_CF_Admin {
 				<?php if ( 'threads' !== $view ) : ?>
 				<select name="form">
 					<option value=""><?php esc_html_e( 'All forms', 'formistic' ); ?></option>
-					<?php foreach ( WPISTIC_CF_Database::form_names() as $fname ) : ?>
+					<?php foreach ( Wpistic_Formistic_Database::form_names() as $fname ) : ?>
 						<option value="<?php echo esc_attr( $fname ); ?>" <?php selected( $form, $fname ); ?>><?php echo esc_html( $fname ); ?></option>
 					<?php endforeach; ?>
 				</select>
 				<?php endif; ?>
 				<button type="submit" class="button"><?php esc_html_e( 'Filter', 'formistic' ); ?></button>
 				<?php if ( $search || $form || $status ) : ?>
-					<a class="WPISTIC_CF-clear" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE ) ); ?>"><?php esc_html_e( 'Clear', 'formistic' ); ?></a>
+					<a class="wpistic-formistic-clear" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE ) ); ?>"><?php esc_html_e( 'Clear', 'formistic' ); ?></a>
 				<?php endif; ?>
 			</form>
 
@@ -360,13 +361,13 @@ class WPISTIC_CF_Admin {
 			<?php endif; ?>
 
 			<?php if ( 'threads' !== $view ) : ?>
-			<form id="WPISTIC_CF-bulk-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-				<input type="hidden" name="action" value="WPISTIC_CF_bulk">
-				<?php wp_nonce_field( 'WPISTIC_CF_bulk' ); ?>
+			<form id="wpistic-formistic-bulk-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="wpistic_formistic_bulk">
+				<?php wp_nonce_field( 'wpistic_formistic_bulk' ); ?>
 
-				<div class="WPISTIC_CF-bulkbar">
-					<div class="WPISTIC_CF-bulkbar__left">
-						<select name="bulk_action" class="WPISTIC_CF-bulkbar__action">
+				<div class="wpistic-formistic-bulkbar">
+					<div class="wpistic-formistic-bulkbar__left">
+						<select name="bulk_action" class="wpistic-formistic-bulkbar__action">
 							<option value=""><?php esc_html_e( 'Bulk actions', 'formistic' ); ?></option>
 							<option value="mark_new"><?php esc_html_e( 'Mark as New', 'formistic' ); ?></option>
 							<option value="mark_read"><?php esc_html_e( 'Mark as Viewed', 'formistic' ); ?></option>
@@ -375,33 +376,33 @@ class WPISTIC_CF_Admin {
 							<option value="export_json"><?php esc_html_e( 'Export selected as JSON', 'formistic' ); ?></option>
 							<option value="delete"><?php esc_html_e( 'Delete', 'formistic' ); ?></option>
 						</select>
-						<button type="submit" class="button WPISTIC_CF-bulkbar__apply"><?php esc_html_e( 'Apply', 'formistic' ); ?></button>
+						<button type="submit" class="button wpistic-formistic-bulkbar__apply"><?php esc_html_e( 'Apply', 'formistic' ); ?></button>
 					</div>
-					<div class="WPISTIC_CF-bulkbar__right">
-						<span class="WPISTIC_CF-bulkbar__label"><?php esc_html_e( 'Export filtered:', 'formistic' ); ?></span>
+					<div class="wpistic-formistic-bulkbar__right">
+						<span class="wpistic-formistic-bulkbar__label"><?php esc_html_e( 'Export filtered:', 'formistic' ); ?></span>
 						<a class="button" href="<?php echo esc_url( $export_csv ); ?>"><?php esc_html_e( 'CSV', 'formistic' ); ?></a>
 						<a class="button" href="<?php echo esc_url( $export_json ); ?>"><?php esc_html_e( 'JSON', 'formistic' ); ?></a>
 					</div>
 				</div>
 
-				<div class="WPISTIC_CF-panel">
-					<table class="WPISTIC_CF-table">
+				<div class="wpistic-formistic-panel">
+					<table class="wpistic-formistic-table">
 						<thead>
 							<tr>
-								<th class="WPISTIC_CF-col-check"><input type="checkbox" id="WPISTIC_CF-check-all" aria-label="<?php esc_attr_e( 'Select all', 'formistic' ); ?>"></th>
-								<th class="WPISTIC_CF-col-form"><?php esc_html_e( 'Form', 'formistic' ); ?></th>
+								<th class="wpistic-formistic-col-check"><input type="checkbox" id="wpistic-formistic-check-all" aria-label="<?php esc_attr_e( 'Select all', 'formistic' ); ?>"></th>
+								<th class="wpistic-formistic-col-form"><?php esc_html_e( 'Form', 'formistic' ); ?></th>
 								<th><?php esc_html_e( 'From', 'formistic' ); ?></th>
-								<th class="WPISTIC_CF-col-preview"><?php esc_html_e( 'Message', 'formistic' ); ?></th>
-								<th class="WPISTIC_CF-col-date"><?php esc_html_e( 'Received', 'formistic' ); ?></th>
-								<th class="WPISTIC_CF-col-status"><?php esc_html_e( 'Status', 'formistic' ); ?></th>
-								<th class="WPISTIC_CF-col-actions"><?php esc_html_e( 'Actions', 'formistic' ); ?></th>
+								<th class="wpistic-formistic-col-preview"><?php esc_html_e( 'Message', 'formistic' ); ?></th>
+								<th class="wpistic-formistic-col-date"><?php esc_html_e( 'Received', 'formistic' ); ?></th>
+								<th class="wpistic-formistic-col-status"><?php esc_html_e( 'Status', 'formistic' ); ?></th>
+								<th class="wpistic-formistic-col-actions"><?php esc_html_e( 'Actions', 'formistic' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
 						<?php if ( ! $items ) : ?>
-							<tr class="WPISTIC_CF-empty">
+							<tr class="wpistic-formistic-empty">
 								<td colspan="7">
-									<div class="WPISTIC_CF-empty__in">
+									<div class="wpistic-formistic-empty__in">
 										<span class="dashicons dashicons-email-alt"></span>
 										<p><?php esc_html_e( 'No submissions yet. When visitors submit any form on your website, they will appear here.', 'formistic' ); ?></p>
 									</div>
@@ -409,22 +410,22 @@ class WPISTIC_CF_Admin {
 							</tr>
 						<?php else : ?>
 							<?php foreach ( $items as $row ) : ?>
-								<tr class="WPISTIC_CF-row WPISTIC_CF-row--<?php echo esc_attr( $row->status ); ?>" data-id="<?php echo esc_attr( $row->id ); ?>">
-									<td class="WPISTIC_CF-col-check"><input type="checkbox" class="WPISTIC_CF-check-row" name="ids[]" value="<?php echo esc_attr( $row->id ); ?>" aria-label="<?php esc_attr_e( 'Select submission', 'formistic' ); ?>"></td>
-									<td class="WPISTIC_CF-col-form"><span class="WPISTIC_CF-formtag"><?php echo esc_html( $row->form_name ?: __( 'Website Form', 'formistic' ) ); ?></span></td>
+								<tr class="wpistic-formistic-row wpistic-formistic-row--<?php echo esc_attr( $row->status ); ?>" data-id="<?php echo esc_attr( $row->id ); ?>">
+									<td class="wpistic-formistic-col-check"><input type="checkbox" class="wpistic-formistic-check-row" name="ids[]" value="<?php echo esc_attr( $row->id ); ?>" aria-label="<?php esc_attr_e( 'Select submission', 'formistic' ); ?>"></td>
+									<td class="wpistic-formistic-col-form"><span class="wpistic-formistic-formtag"><?php echo esc_html( $row->form_name ?: __( 'Website Form', 'formistic' ) ); ?></span></td>
 									<td>
-										<strong class="WPISTIC_CF-from-name"><?php echo esc_html( $row->sender_name ?: __( '—', 'formistic' ) ); ?></strong>
+										<strong class="wpistic-formistic-from-name"><?php echo esc_html( $row->sender_name ?: __( '—', 'formistic' ) ); ?></strong>
 										<?php if ( $row->sender_email ) : ?>
-											<span class="WPISTIC_CF-from-email"><?php echo esc_html( $row->sender_email ); ?></span>
+											<span class="wpistic-formistic-from-email"><?php echo esc_html( $row->sender_email ); ?></span>
 										<?php endif; ?>
 									</td>
-									<td class="WPISTIC_CF-col-preview"><?php echo esc_html( wp_trim_words( (string) $row->message, 14, '…' ) ?: '—' ); ?></td>
-									<td class="WPISTIC_CF-col-date"><?php echo esc_html( $this->human_date( $row->created_at ) ); ?></td>
-									<td class="WPISTIC_CF-col-status"><?php echo $this->status_pill( $row->status ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
-									<td class="WPISTIC_CF-col-actions">
-										<button type="button" class="WPISTIC_CF-btn WPISTIC_CF-btn--view" data-id="<?php echo esc_attr( $row->id ); ?>"><?php esc_html_e( 'View', 'formistic' ); ?></button>
-										<button type="button" class="WPISTIC_CF-btn WPISTIC_CF-btn--reply" data-id="<?php echo esc_attr( $row->id ); ?>"<?php disabled( ! $row->sender_email ); ?>><?php esc_html_e( 'Reply', 'formistic' ); ?></button>
-										<button type="button" class="WPISTIC_CF-btn WPISTIC_CF-btn--del" data-id="<?php echo esc_attr( $row->id ); ?>" aria-label="<?php esc_attr_e( 'Delete', 'formistic' ); ?>"><span class="dashicons dashicons-trash"></span></button>
+									<td class="wpistic-formistic-col-preview"><?php echo esc_html( wp_trim_words( (string) $row->message, 14, '…' ) ?: '—' ); ?></td>
+									<td class="wpistic-formistic-col-date"><?php echo esc_html( $this->human_date( $row->created_at ) ); ?></td>
+									<td class="wpistic-formistic-col-status"><?php echo $this->status_pill( $row->status ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
+									<td class="wpistic-formistic-col-actions">
+										<button type="button" class="wpistic-formistic-btn wpistic-formistic-btn--view" data-id="<?php echo esc_attr( $row->id ); ?>"><?php esc_html_e( 'View', 'formistic' ); ?></button>
+										<button type="button" class="wpistic-formistic-btn wpistic-formistic-btn--reply" data-id="<?php echo esc_attr( $row->id ); ?>"<?php disabled( ! $row->sender_email ); ?>><?php esc_html_e( 'Reply', 'formistic' ); ?></button>
+										<button type="button" class="wpistic-formistic-btn wpistic-formistic-btn--del" data-id="<?php echo esc_attr( $row->id ); ?>" aria-label="<?php esc_attr_e( 'Delete', 'formistic' ); ?>"><span class="dashicons dashicons-trash"></span></button>
 									</td>
 								</tr>
 							<?php endforeach; ?>
@@ -434,8 +435,8 @@ class WPISTIC_CF_Admin {
 				</div>
 			</form>
 			<?php else : ?>
-				<div class="WPISTIC_CF-panel">
-					<table class="WPISTIC_CF-table">
+				<div class="wpistic-formistic-panel">
+					<table class="wpistic-formistic-table">
 						<thead>
 							<tr>
 								<th><?php esc_html_e( 'Sender', 'formistic' ); ?></th>
@@ -457,7 +458,7 @@ class WPISTIC_CF_Admin {
 								);
 								?>
 								<tr>
-									<td><strong><?php echo esc_html( $thread->sender_name ?: __( 'Unknown', 'formistic' ) ); ?></strong><br><span class="WPISTIC_CF-from-email"><?php echo esc_html( $thread->sender_email ); ?></span></td>
+									<td><strong><?php echo esc_html( $thread->sender_name ?: __( 'Unknown', 'formistic' ) ); ?></strong><br><span class="wpistic-formistic-from-email"><?php echo esc_html( $thread->sender_email ); ?></span></td>
 									<td><?php echo esc_html( number_format_i18n( (int) $thread->submissions_count ) ); ?></td>
 									<td><?php echo $this->status_pill( $thread_status ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
 									<td><?php echo esc_html( $this->human_date( (string) $thread->last_at ) ); ?></td>
@@ -470,7 +471,7 @@ class WPISTIC_CF_Admin {
 			<?php endif; ?>
 
 			<?php if ( $pages > 1 ) : ?>
-				<div class="WPISTIC_CF-pagination">
+				<div class="wpistic-formistic-pagination">
 					<?php
 					$base = add_query_arg( array_filter( [
 						'page'   => self::PAGE,
@@ -481,7 +482,7 @@ class WPISTIC_CF_Admin {
 					for ( $i = 1; $i <= $pages; $i++ ) :
 						$url = add_query_arg( 'paged', $i, $base );
 						?>
-						<a class="WPISTIC_CF-page<?php echo $i === $paged ? ' is-current' : ''; ?>" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $i ); ?></a>
+						<a class="wpistic-formistic-page<?php echo $i === $paged ? ' is-current' : ''; ?>" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $i ); ?></a>
 					<?php endfor; ?>
 				</div>
 			<?php endif; ?>
@@ -497,15 +498,15 @@ class WPISTIC_CF_Admin {
 	 * @param string $sender_email Sender email.
 	 */
 	protected function render_sender_panel( $sender_email ) {
-		$items = WPISTIC_CF_Database::sender_activity( $sender_email );
+		$items = Wpistic_Formistic_Database::sender_activity( $sender_email );
 		?>
-		<div class="WPISTIC_CF-panel" style="margin-bottom:12px;padding:14px;">
+		<div class="wpistic-formistic-panel" style="margin-bottom:12px;padding:14px;">
 			<h2 style="margin:0 0 8px;"><?php esc_html_e( 'Unified Sender View', 'formistic' ); ?></h2>
 			<p style="margin:0 0 12px;"><strong><?php echo esc_html( $sender_email ); ?></strong></p>
 			<?php if ( ! $items ) : ?>
 				<p><?php esc_html_e( 'No submissions found for this sender.', 'formistic' ); ?></p>
 			<?php else : ?>
-				<table class="WPISTIC_CF-table">
+				<table class="wpistic-formistic-table">
 					<thead>
 						<tr>
 							<th><?php esc_html_e( 'Date', 'formistic' ); ?></th>
@@ -519,7 +520,7 @@ class WPISTIC_CF_Admin {
 						<?php foreach ( $items as $row ) : ?>
 							<tr>
 								<td><?php echo esc_html( $this->human_date( (string) $row->created_at ) ); ?></td>
-								<td><span class="WPISTIC_CF-formtag"><?php echo esc_html( $row->form_name ?: __( 'Website Form', 'formistic' ) ); ?></span></td>
+								<td><span class="wpistic-formistic-formtag"><?php echo esc_html( $row->form_name ?: __( 'Website Form', 'formistic' ) ); ?></span></td>
 								<td><?php echo esc_html( wp_trim_words( (string) $row->message, 18, '…' ) ); ?></td>
 								<td><?php echo esc_html( number_format_i18n( (int) $row->reply_count ) ); ?></td>
 								<td><?php echo $this->status_pill( (string) $row->status ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
@@ -537,74 +538,74 @@ class WPISTIC_CF_Admin {
 	 */
 	protected function render_modals() {
 		?>
-		<div class="WPISTIC_CF-modal" id="WPISTIC_CF-modal-view" hidden>
-			<div class="WPISTIC_CF-modal__backdrop" data-close></div>
-			<div class="WPISTIC_CF-modal__box" role="dialog" aria-modal="true" aria-labelledby="WPISTIC_CF-view-title">
-				<header class="WPISTIC_CF-modal__head">
-					<h2 id="WPISTIC_CF-view-title"><?php esc_html_e( 'Submission Details', 'formistic' ); ?></h2>
-					<button type="button" class="WPISTIC_CF-modal__x" data-close aria-label="<?php esc_attr_e( 'Close', 'formistic' ); ?>">&times;</button>
+		<div class="wpistic-formistic-modal" id="wpistic-formistic-modal-view" hidden>
+			<div class="wpistic-formistic-modal__backdrop" data-close></div>
+			<div class="wpistic-formistic-modal__box" role="dialog" aria-modal="true" aria-labelledby="wpistic-formistic-view-title">
+				<header class="wpistic-formistic-modal__head">
+					<h2 id="wpistic-formistic-view-title"><?php esc_html_e( 'Submission Details', 'formistic' ); ?></h2>
+					<button type="button" class="wpistic-formistic-modal__x" data-close aria-label="<?php esc_attr_e( 'Close', 'formistic' ); ?>">&times;</button>
 				</header>
-				<div class="WPISTIC_CF-modal__body" id="WPISTIC_CF-view-body">
-					<div class="WPISTIC_CF-loading"><?php esc_html_e( 'Loading…', 'formistic' ); ?></div>
+				<div class="wpistic-formistic-modal__body" id="wpistic-formistic-view-body">
+					<div class="wpistic-formistic-loading"><?php esc_html_e( 'Loading…', 'formistic' ); ?></div>
 				</div>
-				<footer class="WPISTIC_CF-modal__foot">
-					<button type="button" class="WPISTIC_CF-btn WPISTIC_CF-btn--ghost" data-close><?php esc_html_e( 'Close', 'formistic' ); ?></button>
-					<button type="button" class="WPISTIC_CF-btn WPISTIC_CF-btn--primary" id="WPISTIC_CF-view-reply"><?php esc_html_e( 'Reply by Email', 'formistic' ); ?></button>
+				<footer class="wpistic-formistic-modal__foot">
+					<button type="button" class="wpistic-formistic-btn wpistic-formistic-btn--ghost" data-close><?php esc_html_e( 'Close', 'formistic' ); ?></button>
+					<button type="button" class="wpistic-formistic-btn wpistic-formistic-btn--primary" id="wpistic-formistic-view-reply"><?php esc_html_e( 'Reply by Email', 'formistic' ); ?></button>
 				</footer>
 			</div>
 		</div>
 
-		<div class="WPISTIC_CF-modal" id="WPISTIC_CF-modal-reply" hidden>
-			<div class="WPISTIC_CF-modal__backdrop" data-close></div>
-			<div class="WPISTIC_CF-modal__box WPISTIC_CF-modal__box--reply" role="dialog" aria-modal="true" aria-labelledby="WPISTIC_CF-reply-title">
-				<header class="WPISTIC_CF-modal__head">
-					<h2 id="WPISTIC_CF-reply-title"><?php esc_html_e( 'Reply to Submission', 'formistic' ); ?></h2>
-					<button type="button" class="WPISTIC_CF-modal__x" data-close aria-label="<?php esc_attr_e( 'Close', 'formistic' ); ?>">&times;</button>
+		<div class="wpistic-formistic-modal" id="wpistic-formistic-modal-reply" hidden>
+			<div class="wpistic-formistic-modal__backdrop" data-close></div>
+			<div class="wpistic-formistic-modal__box wpistic-formistic-modal__box--reply" role="dialog" aria-modal="true" aria-labelledby="wpistic-formistic-reply-title">
+				<header class="wpistic-formistic-modal__head">
+					<h2 id="wpistic-formistic-reply-title"><?php esc_html_e( 'Reply to Submission', 'formistic' ); ?></h2>
+					<button type="button" class="wpistic-formistic-modal__x" data-close aria-label="<?php esc_attr_e( 'Close', 'formistic' ); ?>">&times;</button>
 				</header>
-				<form class="WPISTIC_CF-modal__body" id="WPISTIC_CF-reply-form">
+				<form class="wpistic-formistic-modal__body" id="wpistic-formistic-reply-form">
 					<input type="hidden" name="submission_id" value="">
-					<label class="WPISTIC_CF-field">
+					<label class="wpistic-formistic-field">
 						<span><?php esc_html_e( 'To', 'formistic' ); ?></span>
 						<input type="email" name="to" readonly>
 					</label>
 
-					<div class="WPISTIC_CF-reply-extras" id="WPISTIC_CF-reply-extras" hidden>
-						<label class="WPISTIC_CF-field">
+					<div class="wpistic-formistic-reply-extras" id="wpistic-formistic-reply-extras" hidden>
+						<label class="wpistic-formistic-field">
 							<span><?php esc_html_e( 'CC', 'formistic' ); ?></span>
 							<input type="text" name="cc" placeholder="<?php esc_attr_e( 'comma,separated@example.com', 'formistic' ); ?>">
 						</label>
-						<label class="WPISTIC_CF-field">
+						<label class="wpistic-formistic-field">
 							<span><?php esc_html_e( 'BCC', 'formistic' ); ?></span>
 							<input type="text" name="bcc" placeholder="<?php esc_attr_e( 'comma,separated@example.com', 'formistic' ); ?>">
 						</label>
 					</div>
 
-					<label class="WPISTIC_CF-field">
+					<label class="wpistic-formistic-field">
 						<span><?php esc_html_e( 'Subject', 'formistic' ); ?></span>
 						<input type="text" name="subject" required>
 					</label>
 
-					<div class="WPISTIC_CF-reply-tools">
-						<select id="WPISTIC_CF-reply-template" class="WPISTIC_CF-reply-tools__select">
+					<div class="wpistic-formistic-reply-tools">
+						<select id="wpistic-formistic-reply-template" class="wpistic-formistic-reply-tools__select">
 							<option value=""><?php esc_html_e( 'Insert template…', 'formistic' ); ?></option>
 						</select>
-						<button type="button" class="button button-small" id="WPISTIC_CF-reply-quote"><?php esc_html_e( 'Quote original', 'formistic' ); ?></button>
-						<button type="button" class="button button-small" id="WPISTIC_CF-reply-toggle-extras"><?php esc_html_e( 'Show CC / BCC', 'formistic' ); ?></button>
-						<label class="WPISTIC_CF-reply-tools__html">
-							<input type="checkbox" id="WPISTIC_CF-reply-html" name="html_mode" value="1">
+						<button type="button" class="button button-small" id="wpistic-formistic-reply-quote"><?php esc_html_e( 'Quote original', 'formistic' ); ?></button>
+						<button type="button" class="button button-small" id="wpistic-formistic-reply-toggle-extras"><?php esc_html_e( 'Show CC / BCC', 'formistic' ); ?></button>
+						<label class="wpistic-formistic-reply-tools__html">
+							<input type="checkbox" id="wpistic-formistic-reply-html" name="html_mode" value="1">
 							<span><?php esc_html_e( 'Send as HTML', 'formistic' ); ?></span>
 						</label>
 					</div>
 
-					<label class="WPISTIC_CF-field">
+					<label class="wpistic-formistic-field">
 						<span><?php esc_html_e( 'Your Reply', 'formistic' ); ?></span>
 						<textarea name="body" rows="10" required></textarea>
 					</label>
-					<div class="WPISTIC_CF-reply-status" id="WPISTIC_CF-reply-status" hidden></div>
+					<div class="wpistic-formistic-reply-status" id="wpistic-formistic-reply-status" hidden></div>
 				</form>
-				<footer class="WPISTIC_CF-modal__foot">
-					<button type="button" class="WPISTIC_CF-btn WPISTIC_CF-btn--ghost" data-close><?php esc_html_e( 'Cancel', 'formistic' ); ?></button>
-					<button type="button" class="WPISTIC_CF-btn WPISTIC_CF-btn--primary" id="WPISTIC_CF-reply-send"><?php esc_html_e( 'Send Reply', 'formistic' ); ?></button>
+				<footer class="wpistic-formistic-modal__foot">
+					<button type="button" class="wpistic-formistic-btn wpistic-formistic-btn--ghost" data-close><?php esc_html_e( 'Cancel', 'formistic' ); ?></button>
+					<button type="button" class="wpistic-formistic-btn wpistic-formistic-btn--primary" id="wpistic-formistic-reply-send"><?php esc_html_e( 'Send Reply', 'formistic' ); ?></button>
 				</footer>
 			</div>
 		</div>
@@ -624,7 +625,7 @@ class WPISTIC_CF_Admin {
 			'replied' => __( 'Replied', 'formistic' ),
 		];
 		$label = $labels[ $status ] ?? ucfirst( $status );
-		return '<span class="WPISTIC_CF-pill WPISTIC_CF-pill--' . esc_attr( $status ) . '">' . esc_html( $label ) . '</span>';
+		return '<span class="wpistic-formistic-pill wpistic-formistic-pill--' . esc_attr( $status ) . '">' . esc_html( $label ) . '</span>';
 	}
 
 	/**

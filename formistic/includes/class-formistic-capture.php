@@ -5,7 +5,7 @@
  * plus the plugin's own shortcode), runs them through the spam stack, and
  * normalizes attachments.
  *
- * @package WPISTIC_CF
+ * @package Wpistic_Formistic
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -13,12 +13,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Captures form submissions into the WPISTIC_CF_Database.
+ * Captures form submissions into the Wpistic_Formistic_Database.
  */
-class WPISTIC_CF_Capture {
+class Wpistic_Formistic_Capture {
 
 	/**
-	 * Flag flipped on while WPISTIC_CF itself dispatches mail (admin notifications,
+	 * Flag flipped on while Wpistic_Formistic itself dispatches mail (admin notifications,
 	 * auto-responder, dashboard replies) so the wp_mail intercept doesn't
 	 * record our own outbound traffic.
 	 *
@@ -39,26 +39,31 @@ class WPISTIC_CF_Capture {
 	 * so disabled sources add zero overhead.
 	 */
 	public function register() {
-		if ( '1' === get_option( 'WPISTIC_CF_capture_g2a', '1' ) ) {
+		// Third-party / theme capture sources are gated by the Captures addon.
+		// The plugin's own forms always store to the inbox regardless.
+		if ( ! Wpistic_Formistic_Addons::is_active( 'captures' ) ) {
+			return;
+		}
+		if ( '1' === get_option( 'wpistic_formistic_capture_g2a', '1' ) ) {
 			foreach ( [ 'g2a_request', 'g2a_reservation' ] as $action ) {
 				add_action( 'admin_post_' . $action, [ $this, 'capture_theme_form' ], 1 );
 				add_action( 'admin_post_nopriv_' . $action, [ $this, 'capture_theme_form' ], 1 );
 			}
 		}
-		if ( '1' === get_option( 'WPISTIC_CF_capture_cf7', '1' ) ) {
+		if ( '1' === get_option( 'wpistic_formistic_capture_cf7', '1' ) ) {
 			add_action( 'wpcf7_mail_sent', [ $this, 'capture_cf7' ], 10, 1 );
 		}
-		if ( '1' === get_option( 'WPISTIC_CF_capture_wpforms', '1' ) ) {
+		if ( '1' === get_option( 'wpistic_formistic_capture_wpforms', '1' ) ) {
 			add_action( 'wpforms_process_complete', [ $this, 'capture_wpforms' ], 10, 4 );
 		}
-		if ( '1' === get_option( 'WPISTIC_CF_capture_gform', '1' ) ) {
+		if ( '1' === get_option( 'wpistic_formistic_capture_gform', '1' ) ) {
 			add_action( 'gform_after_submission', [ $this, 'capture_gform' ], 10, 2 );
 		}
-		if ( '1' === get_option( 'WPISTIC_CF_capture_fluent', '1' ) ) {
+		if ( '1' === get_option( 'wpistic_formistic_capture_fluent', '1' ) ) {
 			add_action( 'fluentform/submission_inserted', [ $this, 'capture_fluent' ], 10, 3 );
 			add_action( 'fluentform_submission_inserted', [ $this, 'capture_fluent' ], 10, 3 );
 		}
-		if ( '1' === get_option( 'WPISTIC_CF_capture_wpmail', '0' ) ) {
+		if ( '1' === get_option( 'wpistic_formistic_capture_wpmail', '0' ) ) {
 			add_filter( 'wp_mail', [ $this, 'intercept_wp_mail' ], 999 );
 		}
 	}
@@ -108,7 +113,7 @@ class WPISTIC_CF_Capture {
 		$id = $this->store( $form_name, $fields );
 
 		// Attachments — CF7 keeps temp file paths in uploaded_files().
-		if ( $id && method_exists( $submission, 'uploaded_files' ) && class_exists( 'WPISTIC_CF_Attachments' ) ) {
+		if ( $id && method_exists( $submission, 'uploaded_files' ) && class_exists( 'Wpistic_Formistic_Attachments' ) ) {
 			$files = (array) $submission->uploaded_files();
 			foreach ( $files as $field_name => $paths ) {
 				foreach ( (array) $paths as $path ) {
@@ -183,9 +188,9 @@ class WPISTIC_CF_Capture {
 
 		$id = $this->store( (string) $form_name, $normalized );
 
-		if ( $id && $file_entries && class_exists( 'WPISTIC_CF_Attachments' ) ) {
+		if ( $id && $file_entries && class_exists( 'Wpistic_Formistic_Attachments' ) ) {
 			foreach ( $file_entries as $f ) {
-				WPISTIC_CF_Attachments::ingest_external_url( $id, $f['url'], $f['name'] );
+				Wpistic_Formistic_Attachments::ingest_external_url( $id, $f['url'], $f['name'] );
 			}
 		}
 	}
@@ -257,9 +262,9 @@ class WPISTIC_CF_Capture {
 		$form_name = $form['title'] ?? __( 'Gravity Form', 'formistic' );
 		$id        = $this->store( (string) $form_name, $fields );
 
-		if ( $id && $f_urls && class_exists( 'WPISTIC_CF_Attachments' ) ) {
+		if ( $id && $f_urls && class_exists( 'Wpistic_Formistic_Attachments' ) ) {
 			foreach ( $f_urls as $url ) {
-				WPISTIC_CF_Attachments::ingest_external_url( $id, $url );
+				Wpistic_Formistic_Attachments::ingest_external_url( $id, $url );
 			}
 		}
 	}
@@ -331,9 +336,9 @@ class WPISTIC_CF_Capture {
 
 		$id = $this->store( $form_name, $fields );
 
-		if ( $id && $file_urls && class_exists( 'WPISTIC_CF_Attachments' ) ) {
+		if ( $id && $file_urls && class_exists( 'Wpistic_Formistic_Attachments' ) ) {
 			foreach ( $file_urls as $url ) {
-				WPISTIC_CF_Attachments::ingest_external_url( $id, $url );
+				Wpistic_Formistic_Attachments::ingest_external_url( $id, $url );
 			}
 		}
 	}
@@ -446,7 +451,7 @@ class WPISTIC_CF_Capture {
 		$phone = '';
 		$msg   = '';
 		$aliases = apply_filters(
-			'WPISTIC_CF_field_aliases',
+			'wpistic_formistic_field_aliases',
 			[
 				'name'    => [ 'name' ],
 				'phone'   => [ 'phone', 'mobile' ],
@@ -473,11 +478,11 @@ class WPISTIC_CF_Capture {
 			}
 		}
 
-		$ip = class_exists( 'WPISTIC_CF_Spam' ) ? WPISTIC_CF_Spam::client_ip() : $this->client_ip_fallback();
+		$ip = class_exists( 'Wpistic_Formistic_Spam' ) ? Wpistic_Formistic_Spam::client_ip() : $this->client_ip_fallback();
 
 		// Spam gate.
-		if ( class_exists( 'WPISTIC_CF_Spam' ) ) {
-			$check = WPISTIC_CF_Spam::pre_store_check( $form_name, $fields, $ip, $email );
+		if ( class_exists( 'Wpistic_Formistic_Spam' ) ) {
+			$check = Wpistic_Formistic_Spam::pre_store_check( $form_name, $fields, $ip, $email );
 			if ( is_wp_error( $check ) ) {
 				/**
 				 * Fires when a submission is blocked at the spam gate.
@@ -486,12 +491,12 @@ class WPISTIC_CF_Capture {
 				 * @param string   $form_name Form name.
 				 * @param array    $fields    Captured fields.
 				 */
-				do_action( 'WPISTIC_CF_submission_blocked', $check, $form_name, $fields );
+				do_action( 'wpistic_formistic_submission_blocked', $check, $form_name, $fields );
 				return 0;
 			}
 		}
 
-		$id = WPISTIC_CF_Database::insert_submission( [
+		$id = Wpistic_Formistic_Database::insert_submission( [
 			'form_name'    => $form_name,
 			'sender_name'  => $name,
 			'sender_email' => $email,
@@ -512,7 +517,7 @@ class WPISTIC_CF_Capture {
 			 * @param string $form_name Form name.
 			 * @param array  $fields    Captured fields.
 			 */
-			do_action( 'WPISTIC_CF_submission_captured', $id, $form_name, $fields );
+			do_action( 'wpistic_formistic_submission_captured', $id, $form_name, $fields );
 
 			if ( $notify_admin ) {
 				$this->notify_admin( $id, $form_name, $fields );
@@ -547,10 +552,10 @@ class WPISTIC_CF_Capture {
 	 * @param array  $fields    Fields.
 	 */
 	protected function notify_admin( $id, $form_name, array $fields ) {
-		if ( '1' !== get_option( 'WPISTIC_CF_notify_admin', '1' ) ) {
+		if ( '1' !== get_option( 'wpistic_formistic_notify_admin', '1' ) ) {
 			return;
 		}
-		$to    = get_option( 'WPISTIC_CF_notify_email', get_option( 'admin_email' ) );
+		$to    = get_option( 'wpistic_formistic_notify_email', get_option( 'admin_email' ) );
 		$lines = [
 			/* translators: %s: form name */
 			sprintf( __( 'New submission from the "%s" form on your website.', 'formistic' ), $form_name ),
@@ -560,7 +565,7 @@ class WPISTIC_CF_Capture {
 			$lines[] = $label . ': ' . $value;
 		}
 		$lines[] = '';
-		$lines[] = __( 'View & reply in the dashboard:', 'formistic' ) . ' ' . admin_url( 'admin.php?page=wpistic-contact&view=' . $id );
+		$lines[] = __( 'View & reply in the dashboard:', 'formistic' ) . ' ' . admin_url( 'admin.php?page=formistic&view=' . $id );
 
 		self::send_internal(
 			$to,
@@ -571,7 +576,7 @@ class WPISTIC_CF_Capture {
 	}
 
 	/**
-	 * wp_mail wrapper that flags the call as WPISTIC_CF-internal so the intercept
+	 * wp_mail wrapper that flags the call as wpistic-formistic-internal so the intercept
 	 * mode doesn't loop on our own outbound mail.
 	 *
 	 * @param string|array $to      Recipient(s).
@@ -590,7 +595,7 @@ class WPISTIC_CF_Capture {
 	}
 
 	/**
-	 * Fallback IP detection if WPISTIC_CF_Spam is unavailable.
+	 * Fallback IP detection if Wpistic_Formistic_Spam is unavailable.
 	 *
 	 * @return string
 	 */
@@ -616,22 +621,22 @@ class WPISTIC_CF_Capture {
 	 * @param string $path          Absolute path to the temp file.
 	 */
 	protected function copy_local_file_to_attachments( $submission_id, $path ) {
-		if ( ! class_exists( 'WPISTIC_CF_Attachments' ) ) {
+		if ( ! class_exists( 'Wpistic_Formistic_Attachments' ) ) {
 			return;
 		}
 		$original = basename( $path );
 		$ext      = strtolower( pathinfo( $original, PATHINFO_EXTENSION ) );
-		$allowed  = WPISTIC_CF_Attachments::allowed_extensions();
+		$allowed  = Wpistic_Formistic_Attachments::allowed_extensions();
 		if ( $allowed && ! in_array( $ext, $allowed, true ) ) {
 			return;
 		}
-		$dir         = WPISTIC_CF_Attachments::submission_dir( (int) $submission_id );
+		$dir         = Wpistic_Formistic_Attachments::submission_dir( (int) $submission_id );
 		$stored_name = wp_generate_password( 16, false, false ) . ( $ext ? '.' . $ext : '' );
 		$target      = trailingslashit( $dir ) . $stored_name;
 		if ( copy( $path, $target ) ) {
 			chmod( $target, 0640 );
 			$check = wp_check_filetype_and_ext( $target, $original );
-			WPISTIC_CF_Database::insert_attachment( [
+			Wpistic_Formistic_Database::insert_attachment( [
 				'submission_id' => (int) $submission_id,
 				'original_name' => sanitize_file_name( $original ),
 				'stored_name'   => $stored_name,

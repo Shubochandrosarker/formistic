@@ -10,7 +10,7 @@ performance — all from one branded dashboard.
 
 | | |
 |---|---|
-| **Stable version** | `1.5.2` |
+| **Stable version** | `2.0.0` |
 | **Requires WordPress** | `6.2` or higher |
 | **Tested up to** | `6.9` |
 | **Requires PHP** | `7.4` or higher |
@@ -43,13 +43,47 @@ they leave off and gives you a complete **submission operations** workflow:
 After activation a top-level **Formistic** menu appears in wp-admin with these
 screens, in order:
 
-1. **Inbox** — every submission, with search, filters, detail view, and replies.
-2. **Forms** — build unlimited forms with the field editor.
-3. **Newsletter** — subscribers captured from sign-up forms, with CSV export.
-4. **Threads** — submissions grouped by sender.
-5. **Analytics** — volume, response time, SLA, and conversion metrics.
-6. **Settings** — General, Captures, Spam, Auto-Responder, Attachments, GDPR,
-   Webhooks, Reply Templates, and AI & Automation.
+1. **Inbox** — every contact submission, with search, filters, detail view, and replies.
+2. **Threads** — submissions grouped by sender.
+3. **Form** — build unlimited forms with the visual builder.
+4. **Analytics** — volume, response time, SLA, and conversion metrics.
+5. **Settings** — General, Attachments, GDPR, plus a tab for each active addon.
+6. **Addons** — turn optional features on or off.
+7. **Newsletter** *(appears when the Newsletter addon is active)* — subscribers, with CSV export.
+
+Additional addon submenus appear in this list as you enable them.
+
+## Addons
+
+Formistic is modular. Open **Formistic → Addons** to toggle features from a
+card-based screen — keep only what your site needs:
+
+| Addon | What it adds |
+|---|---|
+| **Form Captures** | Pull submissions from Contact Form 7, WPForms, Gravity Forms, Fluent Forms, and compatible theme forms |
+| **Spam Protection** | Honeypot, rate limiting, reCAPTCHA v3, Turnstile, Akismet, IP blocklist |
+| **Auto Responder** | Automatic acknowledgement email on every submission |
+| **Webhooks** | Forward submissions as JSON with optional HMAC signing and replay |
+| **Reply Templates** | Reusable reply snippets with placeholders |
+| **AI Automation** | Smart drafts, AI spam scoring, smart tags, keyword rule engine |
+| **Newsletter** | Dedicated subscribers list, kept separate from the inbox, with CSV export |
+
+Each addon reveals its own settings tab and, where relevant, its own submenu.
+Disabled addons add zero runtime overhead.
+
+## Visual form builder
+
+Open **Formistic → Form → Add New** to build a form:
+
+- **Add, remove, and drag-reorder** fields (text, email, phone, URL, paragraph,
+  dropdown, radio, checkboxes, date, file upload, hidden, GDPR consent).
+- A **live preview** updates as you edit.
+- **Style controls** — accent/button colors, corner radius, field spacing, max
+  width, and one- or two-column layout.
+- A **form type** switch: *Contact* forms land in the Inbox; *Newsletter* forms
+  add the email to the Newsletter list and never touch the Inbox.
+
+Place any form with `[wpistic_form id="N"]`.
 
 ## Features
 
@@ -91,7 +125,7 @@ Formistic ships an optional AI layer with **no paid lock-in**:
 |---|---|
 | `[wpistic_contact_form]` | Render the default built-in contact form |
 | `[wpistic_form id="N"]` | Render a custom form built on the Forms screen |
-| `[wpcf_newsletter]` | Render a newsletter sign-up field anywhere |
+| `[wpistic_formistic_newsletter]` | Render a newsletter sign-up field anywhere |
 
 ## External services
 

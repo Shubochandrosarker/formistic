@@ -4,22 +4,25 @@ Tags: contact form, form builder, wordpress, submissions, inbox, ai, spam protec
 Requires at least: 6.2
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.5.2
+Stable tag: 2.0.0
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Professional submission operations for WordPress leads, with forms, inbox management, replies, analytics, automation, and AI-assisted workflows.
+Professional submission operations for WordPress leads — a standalone visual form builder, unified inbox, newsletter list, replies, analytics, and a modular addon system.
 
 == Description ==
 
-Formistic is a professional submission operations plugin for WordPress. It centralizes form capture, inbox management, replies, analytics, automation, and AI-assisted workflows in one admin experience.
+Formistic is a professional, standalone contact-form and submission-operations plugin for WordPress. Build forms with a visual builder, collect every message in a unified inbox, keep newsletter sign-ups in a separate list, and switch features on or off from a modular Addons screen — all from one branded dashboard.
 
-Built and published by Wordpressistic Organization.
+Built and published by Wordpressistic.
 
 Core capabilities:
 
+* Standalone visual form builder — add, remove, and drag-reorder fields with a live preview and per-form style controls (colors, radius, spacing, width, one/two-column layout).
+* Contact vs Newsletter form types — contact messages go to the Inbox, newsletter sign-ups go to the dedicated Newsletter list. They are never mixed.
 * Unified submission inbox with search, filters, status flow, detail view, and reply history.
-* Capture from shortcode forms and popular form plugin integrations.
+* Modular Addons screen — enable only what you need: Form Captures, Spam Protection, Auto Responder, Webhooks, Reply Templates, AI Automation, and Newsletter.
+* Capture from the built-in forms and popular form plugins (Contact Form 7, WPForms, Gravity Forms, Fluent Forms) when the Captures addon is on.
 * Reply composer with templates, quote-original, CC/BCC, and signature.
 * Spam stack: honeypot, rate limiting, reCAPTCHA v3, Turnstile, Akismet, and IP blocklist.
 * Attachments with protected storage and authenticated download links.
@@ -40,20 +43,12 @@ Included AI features:
 
 1. Upload the `formistic` folder to `/wp-content/plugins/` or upload the ZIP via **Plugins > Add New > Upload Plugin**.
 2. Activate the plugin.
-3. Open **Formistic** in wp-admin.
-4. Configure Settings tabs:
-   * General
-   * Captures
-   * Spam
-   * Auto-Responder
-   * Attachments
-   * GDPR
-   * Webhooks
-   * Reply Templates
-   * AI & Automation
-5. Add forms with shortcode:
-   * `[wpistic_contact_form]`
-   * `[wpistic_form id="N"]`
+3. Open **Formistic** in wp-admin. The menu opens on the Inbox, followed by Threads, Form, Analytics, Settings, and Addons.
+4. Open **Formistic > Addons** and enable the features you need (Form Captures, Spam Protection, Auto Responder, Webhooks, Reply Templates, AI Automation, Newsletter). Each addon reveals its own settings tab and, where relevant, its own submenu.
+5. Open **Formistic > Form** to build a form with the visual builder, then place it with a shortcode:
+   * `[wpistic_form id="N"]` — a form you built (Contact or Newsletter type)
+   * `[wpistic_contact_form]` — the quick built-in contact form
+   * `[wpistic_formistic_newsletter]` — a standalone newsletter sign-up field
 
 == Frequently Asked Questions ==
 
@@ -111,6 +106,15 @@ This plugin can connect to third-party services when enabled by the site adminis
 
 == Changelog ==
 
+= 2.0.0 =
+* New: modular Addons screen with card-based on/off toggles for Form Captures, Spam Protection, Auto Responder, Webhooks, Reply Templates, AI Automation, and Newsletter. Features (and their settings tabs / submenus) load only when enabled.
+* New: standalone visual form builder — drag-reorder fields, a live preview pane, and per-form style controls (accent/button colors, corner radius, field spacing, max width, one/two-column layout).
+* New: Contact vs Newsletter form type. Newsletter forms store sign-ups in the Newsletter list only and never appear in the Inbox.
+* Fix: newsletter sign-ups are kept strictly separate from the inbox; contact submissions stay in the inbox.
+* Change: admin menu order is now Inbox, Threads, Form, Analytics, Settings, Addons, then addon submenus (Newsletter) serially.
+* Change: fully rebranded internal code structure to the Wpistic_Formistic namespace (classes, constants, options, tables, hooks, and file names).
+* Bumped version to 2.0.0.
+
 = 1.5.2 =
 * Completed the Formistic product rebrand across plugin metadata, admin screens, documentation, translations, and release packaging.
 * Reordered the admin menu so the Formistic dashboard opens on the Inbox, followed by Forms, Newsletter, Threads, Analytics, and Settings.
@@ -120,11 +124,14 @@ This plugin can connect to third-party services when enabled by the site adminis
 
 = 1.0.0 =
 * Initial WP.org publish build.
-* Full `wpistic_cf` code signature integration for plugin internals and new AI modules.
+* Full `wpistic_formistic` code signature integration for plugin internals and new AI modules.
 * Unified inbox, reply, templates, forms, spam, attachments, export, GDPR, webhooks, analytics.
 * AI & Automation tab with trainable context and easy auto-reply rules.
 
 == Upgrade Notice ==
+
+= 2.0.0 =
+Major release: modular Addons system, standalone visual form builder, Contact/Newsletter form types, and a fully rebranded code structure. A fresh install is recommended.
 
 = 1.5.2 =
 Formistic branding release. Existing forms, submissions, settings, and integrations remain compatible.

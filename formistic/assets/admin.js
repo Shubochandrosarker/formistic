@@ -3,13 +3,13 @@
 ( function () {
 	'use strict';
 
-	var cfg = window.WPISTIC_CF || {};
+	var cfg = window.Wpistic_Formistic || {};
 
 	function $( sel, ctx ) { return ( ctx || document ).querySelector( sel ); }
 	function $all( sel, ctx ) { return Array.prototype.slice.call( ( ctx || document ).querySelectorAll( sel ) ); }
 
-	var viewModal  = $( '#WPISTIC_CF-modal-view' );
-	var replyModal = $( '#WPISTIC_CF-modal-reply' );
+	var viewModal  = $( '#wpistic-formistic-modal-view' );
+	var replyModal = $( '#wpistic-formistic-modal-reply' );
 	var currentId  = 0;
 
 	/* ---------- Modal helpers ---------- */
@@ -54,20 +54,20 @@
 	/* ---------- View ---------- */
 	function viewSubmission( id ) {
 		currentId = id;
-		$( '#WPISTIC_CF-view-body' ).innerHTML = '<div class="WPISTIC_CF-loading">' + ( cfg.i18n.loading || 'Loading…' ) + '</div>';
+		$( '#wpistic-formistic-view-body' ).innerHTML = '<div class="wpistic-formistic-loading">' + ( cfg.i18n.loading || 'Loading…' ) + '</div>';
 		openModal( viewModal );
 
-		post( 'WPISTIC_CF_get_submission', { id: id } ).then( function ( res ) {
+		post( 'wpistic_formistic_get_submission', { id: id } ).then( function ( res ) {
 			if ( ! res || ! res.success ) {
-				$( '#WPISTIC_CF-view-body' ).innerHTML = '<div class="WPISTIC_CF-loading">' + ( ( res && res.data && res.data.message ) || cfg.i18n.error ) + '</div>';
+				$( '#wpistic-formistic-view-body' ).innerHTML = '<div class="wpistic-formistic-loading">' + ( ( res && res.data && res.data.message ) || cfg.i18n.error ) + '</div>';
 				return;
 			}
 			var d = res.data;
 			currentDetail = d;
-			$( '#WPISTIC_CF-view-body' ).innerHTML = d.html;
-			$( '#WPISTIC_CF-view-title' ).textContent = d.form || cfg.i18n.detailsTitle || 'Submission Details';
+			$( '#wpistic-formistic-view-body' ).innerHTML = d.html;
+			$( '#wpistic-formistic-view-title' ).textContent = d.form || cfg.i18n.detailsTitle || 'Submission Details';
 
-			var replyBtn = $( '#WPISTIC_CF-view-reply' );
+			var replyBtn = $( '#wpistic-formistic-view-reply' );
 			replyBtn.dataset.id       = d.id;
 			replyBtn.dataset.email    = d.email || '';
 			replyBtn.dataset.subject  = d.subject || '';
@@ -79,7 +79,7 @@
 			// Reflect the new "read" status in the table row.
 			markRow( d.id, d.status );
 		} ).catch( function () {
-			$( '#WPISTIC_CF-view-body' ).innerHTML = '<div class="WPISTIC_CF-loading">' + cfg.i18n.error + '</div>';
+			$( '#wpistic-formistic-view-body' ).innerHTML = '<div class="wpistic-formistic-loading">' + cfg.i18n.error + '</div>';
 		} );
 	}
 
@@ -88,9 +88,9 @@
 	function loadTemplatesOnce() {
 		if ( templatesLoaded ) { return; }
 		templatesLoaded = true;
-		post( 'WPISTIC_CF_list_templates', {} ).then( function ( res ) {
+		post( 'wpistic_formistic_list_templates', {} ).then( function ( res ) {
 			if ( ! res || ! res.success || ! res.data || ! res.data.templates ) { return; }
-			var sel = $( '#WPISTIC_CF-reply-template' );
+			var sel = $( '#wpistic-formistic-reply-template' );
 			if ( ! sel ) { return; }
 			res.data.templates.forEach( function ( t ) {
 				var opt = document.createElement( 'option' );
@@ -121,26 +121,26 @@
 			window.alert( cfg.i18n.noEmail );
 			return;
 		}
-		var form = $( '#WPISTIC_CF-reply-form' );
+		var form = $( '#wpistic-formistic-reply-form' );
 		form.querySelector( '[name=submission_id]' ).value = id;
 		form.querySelector( '[name=to]' ).value = email;
 		form.querySelector( '[name=subject]' ).value = subject || '';
 		form.querySelector( '[name=body]' ).value = '';
 		form.querySelector( '[name=cc]' ).value = '';
 		form.querySelector( '[name=bcc]' ).value = '';
-		$( '#WPISTIC_CF-reply-html' ).checked = false;
+		$( '#wpistic-formistic-reply-html' ).checked = false;
 		// Reset the CC/BCC reveal.
-		$( '#WPISTIC_CF-reply-extras' ).hidden = true;
-		var toggle = $( '#WPISTIC_CF-reply-toggle-extras' );
+		$( '#wpistic-formistic-reply-extras' ).hidden = true;
+		var toggle = $( '#wpistic-formistic-reply-toggle-extras' );
 		if ( toggle ) { toggle.textContent = cfg.i18n.showExtras || 'Show CC / BCC'; }
 		// Reset the template picker to placeholder.
-		var tpl = $( '#WPISTIC_CF-reply-template' );
+		var tpl = $( '#wpistic-formistic-reply-template' );
 		if ( tpl ) { tpl.value = ''; }
 
-		var status = $( '#WPISTIC_CF-reply-status' );
+		var status = $( '#wpistic-formistic-reply-status' );
 		status.hidden = true;
-		status.className = 'WPISTIC_CF-reply-status';
-		$( '#WPISTIC_CF-reply-send' ).disabled = false;
+		status.className = 'wpistic-formistic-reply-status';
+		$( '#wpistic-formistic-reply-send' ).disabled = false;
 
 		loadTemplatesOnce();
 		openModal( replyModal );
@@ -149,9 +149,9 @@
 
 	/* CC/BCC reveal toggle. */
 	document.addEventListener( 'click', function ( e ) {
-		var t = e.target.closest( '#WPISTIC_CF-reply-toggle-extras' );
+		var t = e.target.closest( '#wpistic-formistic-reply-toggle-extras' );
 		if ( ! t ) { return; }
-		var box = $( '#WPISTIC_CF-reply-extras' );
+		var box = $( '#wpistic-formistic-reply-extras' );
 		box.hidden = ! box.hidden;
 		t.textContent = box.hidden
 			? ( cfg.i18n.showExtras || 'Show CC / BCC' )
@@ -160,9 +160,9 @@
 
 	/* Quote original button. */
 	document.addEventListener( 'click', function ( e ) {
-		var t = e.target.closest( '#WPISTIC_CF-reply-quote' );
+		var t = e.target.closest( '#wpistic-formistic-reply-quote' );
 		if ( ! t ) { return; }
-		var ta     = $( '#WPISTIC_CF-reply-form [name=body]' );
+		var ta     = $( '#wpistic-formistic-reply-form [name=body]' );
 		var header = ( cfg.i18n.quotedHeader || '\n\n— On {date}, {name} wrote: —\n' )
 			.replace( /\{date\}/g, currentDetail.createdAt || '' )
 			.replace( /\{name\}/g, currentDetail.name || cfg.i18n.statusNew || '' );
@@ -174,12 +174,12 @@
 
 	/* Template picker. */
 	document.addEventListener( 'change', function ( e ) {
-		var t = e.target.closest( '#WPISTIC_CF-reply-template' );
+		var t = e.target.closest( '#wpistic-formistic-reply-template' );
 		if ( ! t ) { return; }
 		var opt = t.options[ t.selectedIndex ];
 		if ( ! opt || ! opt.value ) { return; }
-		var ta = $( '#WPISTIC_CF-reply-form [name=body]' );
-		var subjInput = $( '#WPISTIC_CF-reply-form [name=subject]' );
+		var ta = $( '#wpistic-formistic-reply-form [name=body]' );
+		var subjInput = $( '#wpistic-formistic-reply-form [name=subject]' );
 		var newBody    = applyPlaceholders( opt.dataset.body || '' );
 		var newSubject = applyPlaceholders( opt.dataset.subject || '' );
 		ta.value = newBody;
@@ -189,16 +189,16 @@
 	} );
 
 	function sendReply() {
-		var form   = $( '#WPISTIC_CF-reply-form' );
-		var sendBtn = $( '#WPISTIC_CF-reply-send' );
-		var status = $( '#WPISTIC_CF-reply-status' );
+		var form   = $( '#wpistic-formistic-reply-form' );
+		var sendBtn = $( '#wpistic-formistic-reply-send' );
+		var status = $( '#wpistic-formistic-reply-status' );
 		var id      = form.querySelector( '[name=submission_id]' ).value;
 		var subject = form.querySelector( '[name=subject]' ).value.trim();
 		var bodyTxt = form.querySelector( '[name=body]' ).value.trim();
 
 		if ( ! subject || ! bodyTxt ) {
 			status.hidden = false;
-			status.className = 'WPISTIC_CF-reply-status WPISTIC_CF-reply-status--err';
+			status.className = 'wpistic-formistic-reply-status wpistic-formistic-reply-status--err';
 			status.textContent = cfg.i18n.error;
 			return;
 		}
@@ -209,24 +209,24 @@
 
 		var cc      = ( form.querySelector( '[name=cc]' )  || {} ).value || '';
 		var bcc     = ( form.querySelector( '[name=bcc]' ) || {} ).value || '';
-		var html    = $( '#WPISTIC_CF-reply-html' ).checked ? '1' : '';
+		var html    = $( '#wpistic-formistic-reply-html' ).checked ? '1' : '';
 
-		post( 'WPISTIC_CF_send_reply', { submission_id: id, subject: subject, body: bodyTxt, cc: cc, bcc: bcc, html_mode: html } ).then( function ( res ) {
+		post( 'wpistic_formistic_send_reply', { submission_id: id, subject: subject, body: bodyTxt, cc: cc, bcc: bcc, html_mode: html } ).then( function ( res ) {
 			status.hidden = false;
 			if ( res && res.success ) {
-				status.className = 'WPISTIC_CF-reply-status WPISTIC_CF-reply-status--ok';
+				status.className = 'wpistic-formistic-reply-status wpistic-formistic-reply-status--ok';
 				status.textContent = res.data.message || cfg.i18n.sent;
 				markRow( id, 'replied' );
 				setTimeout( closeAll, 1100 );
 			} else {
-				status.className = 'WPISTIC_CF-reply-status WPISTIC_CF-reply-status--err';
+				status.className = 'wpistic-formistic-reply-status wpistic-formistic-reply-status--err';
 				status.textContent = ( res && res.data && res.data.message ) || cfg.i18n.error;
 				sendBtn.disabled = false;
 			}
 			sendBtn.textContent = cfg.i18n.sendReply || 'Send Reply';
 		} ).catch( function () {
 			status.hidden = false;
-			status.className = 'WPISTIC_CF-reply-status WPISTIC_CF-reply-status--err';
+			status.className = 'wpistic-formistic-reply-status wpistic-formistic-reply-status--err';
 			status.textContent = cfg.i18n.error;
 			sendBtn.disabled = false;
 			sendBtn.textContent = cfg.i18n.sendReply || 'Send Reply';
@@ -236,7 +236,7 @@
 	/* ---------- Delete ---------- */
 	function deleteSubmission( id, row ) {
 		if ( ! window.confirm( cfg.i18n.confirmDel ) ) { return; }
-		post( 'WPISTIC_CF_delete', { id: id } ).then( function ( res ) {
+		post( 'wpistic_formistic_delete', { id: id } ).then( function ( res ) {
 			if ( res && res.success && row ) {
 				row.style.transition = 'opacity .2s ease';
 				row.style.opacity = '0';
@@ -249,67 +249,67 @@
 
 	/* ---------- Row status reflect ---------- */
 	function markRow( id, status ) {
-		var row = $( '.WPISTIC_CF-row[data-id="' + id + '"]' );
+		var row = $( '.wpistic-formistic-row[data-id="' + id + '"]' );
 		if ( ! row ) { return; }
-		row.classList.remove( 'WPISTIC_CF-row--new', 'WPISTIC_CF-row--read', 'WPISTIC_CF-row--replied' );
-		row.classList.add( 'WPISTIC_CF-row--' + status );
-		var pill = row.querySelector( '.WPISTIC_CF-pill' );
+		row.classList.remove( 'wpistic-formistic-row--new', 'wpistic-formistic-row--read', 'wpistic-formistic-row--replied' );
+		row.classList.add( 'wpistic-formistic-row--' + status );
+		var pill = row.querySelector( '.wpistic-formistic-pill' );
 		if ( pill ) {
 			var labels = {
 				replied: cfg.i18n.statusReplied || 'Replied',
 				read:    cfg.i18n.statusRead    || 'Viewed',
 				new:     cfg.i18n.statusNew     || 'New'
 			};
-			pill.className = 'WPISTIC_CF-pill WPISTIC_CF-pill--' + status;
+			pill.className = 'wpistic-formistic-pill wpistic-formistic-pill--' + status;
 			pill.textContent = labels[ status ] || status;
 		}
 	}
 
 	/* ---------- Event delegation ---------- */
 	document.addEventListener( 'click', function ( e ) {
-		var view  = e.target.closest( '.WPISTIC_CF-btn--view' );
-		var reply = e.target.closest( '.WPISTIC_CF-btn--reply' );
-		var del   = e.target.closest( '.WPISTIC_CF-btn--del' );
+		var view  = e.target.closest( '.wpistic-formistic-btn--view' );
+		var reply = e.target.closest( '.wpistic-formistic-btn--reply' );
+		var del   = e.target.closest( '.wpistic-formistic-btn--del' );
 
 		if ( view ) {
 			viewSubmission( view.dataset.id );
 		} else if ( reply && ! reply.disabled ) {
-			var row = reply.closest( '.WPISTIC_CF-row' );
-			var email = row ? ( row.querySelector( '.WPISTIC_CF-from-email' ) || {} ).textContent : '';
-			var form  = row ? ( row.querySelector( '.WPISTIC_CF-formtag' ) || {} ).textContent : '';
+			var row = reply.closest( '.wpistic-formistic-row' );
+			var email = row ? ( row.querySelector( '.wpistic-formistic-from-email' ) || {} ).textContent : '';
+			var form  = row ? ( row.querySelector( '.wpistic-formistic-formtag' ) || {} ).textContent : '';
 			openReply( reply.dataset.id, ( email || '' ).trim(), 'Re: ' + ( form || '' ).trim() );
 		} else if ( del ) {
-			deleteSubmission( del.dataset.id, del.closest( '.WPISTIC_CF-row' ) );
+			deleteSubmission( del.dataset.id, del.closest( '.wpistic-formistic-row' ) );
 		}
 	} );
 
 	document.addEventListener( 'click', function ( e ) {
-		var add = e.target.closest( '.WPISTIC_CF-note-add' );
+		var add = e.target.closest( '.wpistic-formistic-note-add' );
 		if ( ! add ) { return; }
-		var box = add.closest( '.WPISTIC_CF-note-form' );
+		var box = add.closest( '.wpistic-formistic-note-form' );
 		if ( ! box ) { return; }
 		var id = box.getAttribute( 'data-submission' );
-		var note = ( box.querySelector( '[name=WPISTIC_CF_note_body]' ) || {} ).value || '';
-		var tags = ( box.querySelector( '[name=WPISTIC_CF_note_tags]' ) || {} ).value || '';
+		var note = ( box.querySelector( '[name=wpistic_formistic_note_body]' ) || {} ).value || '';
+		var tags = ( box.querySelector( '[name=wpistic_formistic_note_tags]' ) || {} ).value || '';
 		if ( ! note.trim() ) { return; }
 		add.disabled = true;
-		post( 'WPISTIC_CF_add_note', { submission_id: id, note: note, tags: tags } ).then( function ( res ) {
+		post( 'wpistic_formistic_add_note', { submission_id: id, note: note, tags: tags } ).then( function ( res ) {
 			add.disabled = false;
 			if ( ! res || ! res.success ) { return; }
 			currentDetail = currentDetail || {};
-			$( '#WPISTIC_CF-view-body' ).innerHTML = res.data.html || '';
+			$( '#wpistic-formistic-view-body' ).innerHTML = res.data.html || '';
 		} ).catch( function () {
 			add.disabled = false;
 		} );
 	} );
 
 	document.addEventListener( 'click', function ( e ) {
-		var replay = e.target.closest( '.WPISTIC_CF-replay' );
+		var replay = e.target.closest( '.wpistic-formistic-replay' );
 		if ( ! replay ) { return; }
 		var id = replay.getAttribute( 'data-submission' );
 		var type = replay.getAttribute( 'data-type' ) || 'both';
 		replay.disabled = true;
-		post( 'WPISTIC_CF_replay_submission', { submission_id: id, replay_type: type } ).then( function () {
+		post( 'wpistic_formistic_replay_submission', { submission_id: id, replay_type: type } ).then( function () {
 			replay.disabled = false;
 		} ).catch( function () {
 			replay.disabled = false;
@@ -317,23 +317,23 @@
 	} );
 
 	// Reply button inside the View modal.
-	var viewReplyBtn = $( '#WPISTIC_CF-view-reply' );
+	var viewReplyBtn = $( '#wpistic-formistic-view-reply' );
 	if ( viewReplyBtn ) {
 		viewReplyBtn.addEventListener( 'click', function () {
 			openReply( this.dataset.id, this.dataset.email, this.dataset.subject );
 		} );
 	}
 
-	var sendBtn = $( '#WPISTIC_CF-reply-send' );
+	var sendBtn = $( '#wpistic-formistic-reply-send' );
 	if ( sendBtn ) { sendBtn.addEventListener( 'click', sendReply ); }
 
 	/* ---------- Form builder (CPT edit screen) ---------- */
-	var fieldsContainer = $( '#WPISTIC_CF-fields-editor-rows' );
-	var addFieldBtn     = $( '#WPISTIC_CF-fields-editor-add' );
-	var fieldsTemplate  = $( '#WPISTIC_CF-fields-editor-template' );
+	var fieldsContainer = $( '#wpistic-formistic-fields-editor-rows' );
+	var addFieldBtn     = $( '#wpistic-formistic-fields-editor-add' );
+	var fieldsTemplate  = $( '#wpistic-formistic-fields-editor-template' );
 
 	function nextFieldIndex() {
-		var rows = $all( '.WPISTIC_CF-field-row', fieldsContainer );
+		var rows = $all( '.wpistic-formistic-field-row', fieldsContainer );
 		var max = -1;
 		rows.forEach( function ( r ) {
 			var i = parseInt( r.dataset.index, 10 );
@@ -355,27 +355,185 @@
 		} );
 
 		fieldsContainer.addEventListener( 'click', function ( e ) {
-			var rm = e.target.closest( '.WPISTIC_CF-field-row__remove' );
+			var rm = e.target.closest( '.wpistic-formistic-field-row__remove' );
 			if ( ! rm ) { return; }
-			var row = rm.closest( '.WPISTIC_CF-field-row' );
+			var row = rm.closest( '.wpistic-formistic-field-row' );
 			if ( row && window.confirm( 'Remove this field?' ) ) {
 				row.parentNode.removeChild( row );
 			}
 		} );
 	}
 
+	/* ---------- Form builder: drag reorder + live preview + live style ---------- */
+	var builder = $( '#wpistic-formistic-builder' );
+	if ( builder && fieldsContainer ) {
+		var previewEl = $( '#wpistic-formistic-preview' );
+
+		function esc( s ) {
+			return String( s == null ? '' : s ).replace( /[&<>"]/g, function ( c ) {
+				return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ c ];
+			} );
+		}
+
+		function styleVal( name, fallback ) {
+			var el = document.querySelector( '[name="wpistic_formistic_settings[' + name + ']"]' );
+			return el && el.value !== '' ? el.value : fallback;
+		}
+
+		function readFields() {
+			return $all( '.wpistic-formistic-field-row', fieldsContainer ).map( function ( row ) {
+				var i = row.dataset.index;
+				function v( part ) {
+					var el = row.querySelector( '[name="wpistic_formistic_fields[' + i + '][' + part + ']"]' );
+					return el ? el.value : '';
+				}
+				var reqEl = row.querySelector( 'input[type=checkbox][name="wpistic_formistic_fields[' + i + '][required]"]' );
+				return {
+					label: v( 'label' ), type: v( 'type' ), placeholder: v( 'placeholder' ),
+					options: v( 'options' ), required: reqEl ? reqEl.checked : false
+				};
+			} );
+		}
+
+		function previewField( f ) {
+			var star = f.required ? ' <span style="color:#dc2626">*</span>' : '';
+			var label = '<span class="wpf-pv-label">' + esc( f.label || 'Untitled' ) + star + '</span>';
+			var ph = esc( f.placeholder );
+			var opts = ( f.options || '' ).split( /\r?\n/ ).map( function ( o ) { return o.trim(); } ).filter( Boolean );
+			var inner;
+			switch ( f.type ) {
+				case 'textarea': inner = '<textarea rows="3" placeholder="' + ph + '"></textarea>'; break;
+				case 'select':
+					inner = '<select><option>' + ( opts.length ? opts.map( esc ).join( '</option><option>' ) : '—' ) + '</option></select>'; break;
+				case 'radio':
+				case 'checkbox_group':
+					var t = f.type === 'radio' ? 'radio' : 'checkbox';
+					inner = '<div class="wpf-pv-opts">' + ( opts.length ? opts : [ 'Option' ] ).map( function ( o ) {
+						return '<label><input type="' + t + '" disabled> ' + esc( o ) + '</label>';
+					} ).join( '' ) + '</div>'; break;
+				case 'checkbox':
+				case 'consent':
+					return '<div class="wpf-pv-field"><label class="wpf-pv-consent"><input type="checkbox" disabled> ' + esc( f.label || 'I agree' ) + star + '</label></div>';
+				case 'file': inner = '<input type="file" disabled>'; break;
+				case 'date': inner = '<input type="date" disabled>'; break;
+				case 'hidden': return '';
+				default: inner = '<input type="' + ( [ 'email', 'tel', 'url' ].indexOf( f.type ) > -1 ? f.type : 'text' ) + '" placeholder="' + ph + '">';
+			}
+			return '<div class="wpf-pv-field">' + label + inner + '</div>';
+		}
+
+		function renderPreview() {
+			if ( ! previewEl ) { return; }
+			var fields = readFields();
+			var accent = styleVal( 'accent', '#2563eb' );
+			var btnText = styleVal( 'button_text', '#ffffff' );
+			var radius = styleVal( 'radius', '10' );
+			var gap = styleVal( 'spacing', '16' );
+			var width = styleVal( 'width', '640' );
+			var layout = styleVal( 'layout', 'one' );
+			var submitEl = document.querySelector( '[name="wpistic_formistic_settings[submit_label]"]' );
+			var submit = submitEl && submitEl.value ? submitEl.value : 'Send Message';
+			var titleEl = document.querySelector( '#title' );
+			var title = titleEl && titleEl.value ? titleEl.value : 'Your Form';
+
+			var css = '--wpf-accent:' + accent + ';--wpf-btn-text:' + btnText + ';--wpf-radius:' + parseInt( radius, 10 ) +
+				'px;--wpf-gap:' + parseInt( gap, 10 ) + 'px;--wpf-width:' + parseInt( width, 10 ) + 'px;';
+			var html = '<div class="wpf-pv-form wpf-pv-form--' + ( layout === 'two' ? 'two' : 'one' ) + '" style="' + css + '">' +
+				'<h3 class="wpf-pv-title">' + esc( title ) + '</h3>' +
+				fields.map( previewField ).join( '' ) +
+				'<button type="button" class="wpf-pv-submit">' + esc( submit ) + '</button>' +
+				'</div>';
+			previewEl.innerHTML = html;
+		}
+
+		// Re-render on any edit in the builder or style/settings inputs.
+		document.addEventListener( 'input', function ( e ) {
+			if ( e.target.closest( '#wpistic-formistic-builder' ) ||
+				( e.target.name && e.target.name.indexOf( 'wpistic_formistic_settings' ) === 0 ) ||
+				e.target.id === 'title' ) {
+				renderPreview();
+			}
+		} );
+		document.addEventListener( 'change', function ( e ) {
+			if ( e.target.closest( '#wpistic-formistic-builder' ) ||
+				( e.target.name && e.target.name.indexOf( 'wpistic_formistic_settings' ) === 0 ) ) {
+				renderPreview();
+			}
+		} );
+
+		// Drag-to-reorder via the handle.
+		var dragRow = null;
+		fieldsContainer.addEventListener( 'mousedown', function ( e ) {
+			var handle = e.target.closest( '.wpistic-formistic-field-row__drag' );
+			if ( handle ) {
+				var row = handle.closest( '.wpistic-formistic-field-row' );
+				if ( row ) { row.setAttribute( 'draggable', 'true' ); }
+			}
+		} );
+		fieldsContainer.addEventListener( 'dragstart', function ( e ) {
+			dragRow = e.target.closest( '.wpistic-formistic-field-row' );
+			if ( dragRow ) { dragRow.classList.add( 'is-dragging' ); }
+		} );
+		fieldsContainer.addEventListener( 'dragover', function ( e ) {
+			e.preventDefault();
+			var over = e.target.closest( '.wpistic-formistic-field-row' );
+			if ( ! over || ! dragRow || over === dragRow ) { return; }
+			var rect = over.getBoundingClientRect();
+			var after = ( e.clientY - rect.top ) > rect.height / 2;
+			fieldsContainer.insertBefore( dragRow, after ? over.nextSibling : over );
+		} );
+		fieldsContainer.addEventListener( 'drop', function ( e ) { e.preventDefault(); } );
+		fieldsContainer.addEventListener( 'dragend', function () {
+			if ( dragRow ) {
+				dragRow.classList.remove( 'is-dragging' );
+				dragRow.setAttribute( 'draggable', 'false' );
+			}
+			dragRow = null;
+			renderPreview();
+		} );
+
+		// Re-render after add/remove field.
+		if ( addFieldBtn ) { addFieldBtn.addEventListener( 'click', function () { setTimeout( renderPreview, 0 ); } ); }
+		fieldsContainer.addEventListener( 'click', function ( e ) {
+			if ( e.target.closest( '.wpistic-formistic-field-row__remove' ) ) { setTimeout( renderPreview, 0 ); }
+		} );
+
+		renderPreview();
+	}
+
+	/* ---------- Addons screen: instant toggle ---------- */
+	$all( '.wpistic-formistic-addon-toggle' ).forEach( function ( toggle ) {
+		toggle.addEventListener( 'change', function () {
+			var slug = toggle.dataset.slug;
+			var card = toggle.closest( '.wpistic-formistic-addon-card' );
+			var active = toggle.checked;
+			toggle.disabled = true;
+			post( 'wpistic_formistic_toggle_addon', { slug: slug, active: active ? '1' : '0' } )
+				.then( function ( res ) {
+					if ( ! res || ! res.success ) { throw new Error(); }
+					if ( card ) {
+						card.classList.toggle( 'is-active', active );
+						var status = card.querySelector( '.wpistic-formistic-addon-card__status' );
+						if ( status ) { status.textContent = active ? 'Active' : 'Inactive'; }
+					}
+				} )
+				.catch( function () { toggle.checked = ! active; } )
+				.finally( function () { toggle.disabled = false; } );
+		} );
+	} );
+
 	/* ---------- Bulk actions ---------- */
-	var bulkForm = $( '#WPISTIC_CF-bulk-form' );
+	var bulkForm = $( '#wpistic-formistic-bulk-form' );
 	if ( bulkForm ) {
-		var checkAll = $( '#WPISTIC_CF-check-all' );
+		var checkAll = $( '#wpistic-formistic-check-all' );
 		if ( checkAll ) {
 			checkAll.addEventListener( 'change', function () {
-				$all( '.WPISTIC_CF-check-row', bulkForm ).forEach( function ( cb ) { cb.checked = checkAll.checked; } );
+				$all( '.wpistic-formistic-check-row', bulkForm ).forEach( function ( cb ) { cb.checked = checkAll.checked; } );
 			} );
 		}
 		bulkForm.addEventListener( 'submit', function ( e ) {
 			var action = ( bulkForm.querySelector( '[name=bulk_action]' ) || {} ).value || '';
-			var selected = $all( '.WPISTIC_CF-check-row', bulkForm ).filter( function ( cb ) { return cb.checked; } );
+			var selected = $all( '.wpistic-formistic-check-row', bulkForm ).filter( function ( cb ) { return cb.checked; } );
 			if ( ! action ) {
 				e.preventDefault();
 				window.alert( cfg.i18n.noBulkAction || 'Pick a bulk action.' );

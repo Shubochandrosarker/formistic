@@ -6,7 +6,7 @@
  * Supports an optional file-upload field, reCAPTCHA v3 and Cloudflare
  * Turnstile when configured under Settings → Spam.
  *
- * @package WPISTIC_CF
+ * @package Wpistic_Formistic
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -16,15 +16,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Registers the contact-form shortcode and its submit handler.
  */
-class WPISTIC_CF_Shortcode {
+class Wpistic_Formistic_Shortcode {
 
 	/**
 	 * Register hooks.
 	 */
 	public function register() {
 		add_shortcode( 'wpistic_contact_form', [ $this, 'render' ] );
-		add_action( 'admin_post_WPISTIC_CF_submit', [ $this, 'handle_submit' ] );
-		add_action( 'admin_post_nopriv_WPISTIC_CF_submit', [ $this, 'handle_submit' ] );
+		add_action( 'admin_post_wpistic_formistic_submit', [ $this, 'handle_submit' ] );
+		add_action( 'admin_post_nopriv_wpistic_formistic_submit', [ $this, 'handle_submit' ] );
 		add_action( 'wp_enqueue_scripts', [ $this, 'assets' ] );
 	}
 
@@ -32,7 +32,7 @@ class WPISTIC_CF_Shortcode {
 	 * Register (lightweight) frontend styles.
 	 */
 	public function assets() {
-		wp_register_style( 'WPISTIC_CF-form', WPISTIC_CF_URL . 'assets/form.css', [], WPISTIC_CF_VERSION );
+		wp_register_style( 'wpistic-formistic-form', WPISTIC_FORMISTIC_URL . 'assets/form.css', [], WPISTIC_FORMISTIC_VERSION );
 	}
 
 	/**
@@ -53,91 +53,91 @@ class WPISTIC_CF_Shortcode {
 			'wpistic_contact_form'
 		);
 
-		$show_upload = ( '1' === (string) $atts['upload'] ) && class_exists( 'WPISTIC_CF_Attachments' ) && WPISTIC_CF_Attachments::enabled();
-		WPISTIC_CF_Database::log_impression( (string) $atts['form_name'] );
+		$show_upload = ( '1' === (string) $atts['upload'] ) && class_exists( 'Wpistic_Formistic_Attachments' ) && Wpistic_Formistic_Attachments::enabled();
+		Wpistic_Formistic_Database::log_impression( (string) $atts['form_name'] );
 
-		wp_enqueue_style( 'WPISTIC_CF-form' );
+		wp_enqueue_style( 'wpistic-formistic-form' );
 
-		$sent       = isset( $_GET['WPISTIC_CF_sent'] ) ? sanitize_text_field( wp_unslash( $_GET['WPISTIC_CF_sent'] ) ) : '';
+		$sent       = isset( $_GET['wpistic_formistic_sent'] ) ? sanitize_text_field( wp_unslash( $_GET['wpistic_formistic_sent'] ) ) : '';
 		$enctype    = $show_upload ? ' enctype="multipart/form-data"' : '';
 
 		ob_start();
 		?>
-		<div class="WPISTIC_CF-form-wrap" id="WPISTIC_CF">
+		<div class="wpistic-formistic-form-wrap" id="Wpistic_Formistic">
 			<?php if ( '1' === $sent ) : ?>
-				<div class="WPISTIC_CF-form-notice WPISTIC_CF-form-notice--ok">
+				<div class="wpistic-formistic-form-notice wpistic-formistic-form-notice--ok">
 					<?php esc_html_e( 'Thank you — your message has been sent. We will get back to you shortly.', 'formistic' ); ?>
 				</div>
 			<?php elseif ( 'error' === $sent ) : ?>
-				<div class="WPISTIC_CF-form-notice WPISTIC_CF-form-notice--err">
+				<div class="wpistic-formistic-form-notice wpistic-formistic-form-notice--err">
 					<?php esc_html_e( 'Sorry, something went wrong. Please try again.', 'formistic' ); ?>
 				</div>
 			<?php elseif ( 'spam' === $sent ) : ?>
-				<div class="WPISTIC_CF-form-notice WPISTIC_CF-form-notice--err">
+				<div class="wpistic-formistic-form-notice wpistic-formistic-form-notice--err">
 					<?php esc_html_e( 'Your submission was blocked by our spam filter. If you believe this is a mistake, please try again or contact us another way.', 'formistic' ); ?>
 				</div>
 			<?php elseif ( 'rate' === $sent ) : ?>
-				<div class="WPISTIC_CF-form-notice WPISTIC_CF-form-notice--err">
+				<div class="wpistic-formistic-form-notice wpistic-formistic-form-notice--err">
 					<?php esc_html_e( 'Too many submissions from your network. Please wait a while and try again.', 'formistic' ); ?>
 				</div>
 			<?php elseif ( 'upload' === $sent ) : ?>
-				<div class="WPISTIC_CF-form-notice WPISTIC_CF-form-notice--err">
+				<div class="wpistic-formistic-form-notice wpistic-formistic-form-notice--err">
 					<?php esc_html_e( 'There was a problem with one of your file uploads. Please check the file type and size and try again.', 'formistic' ); ?>
 				</div>
 			<?php elseif ( 'consent' === $sent ) : ?>
-				<div class="WPISTIC_CF-form-notice WPISTIC_CF-form-notice--err">
+				<div class="wpistic-formistic-form-notice wpistic-formistic-form-notice--err">
 					<?php esc_html_e( 'Please tick the consent box to continue.', 'formistic' ); ?>
 				</div>
 			<?php endif; ?>
 
-			<form class="WPISTIC_CF-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"<?php echo $enctype; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
-				<input type="hidden" name="action" value="WPISTIC_CF_submit">
-				<input type="hidden" name="WPISTIC_CF_form_name" value="<?php echo esc_attr( $atts['form_name'] ); ?>">
-				<?php wp_nonce_field( 'WPISTIC_CF_submit', 'WPISTIC_CF_nonce' ); ?>
-				<p class="WPISTIC_CF-hp" aria-hidden="true">
+			<form class="wpistic-formistic-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"<?php echo $enctype; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+				<input type="hidden" name="action" value="wpistic_formistic_submit">
+				<input type="hidden" name="wpistic_formistic_form_name" value="<?php echo esc_attr( $atts['form_name'] ); ?>">
+				<?php wp_nonce_field( 'wpistic_formistic_submit', 'wpistic_formistic_nonce' ); ?>
+				<p class="wpistic-formistic-hp" aria-hidden="true">
 					<label><?php esc_html_e( 'Leave this field empty', 'formistic' ); ?>
-						<input type="text" name="WPISTIC_CF_hp" tabindex="-1" autocomplete="off">
+						<input type="text" name="wpistic_formistic_hp" tabindex="-1" autocomplete="off">
 					</label>
 				</p>
 
 				<?php if ( $atts['title'] ) : ?>
-					<h3 class="WPISTIC_CF-form-title"><?php echo esc_html( $atts['title'] ); ?></h3>
+					<h3 class="wpistic-formistic-form-title"><?php echo esc_html( $atts['title'] ); ?></h3>
 				<?php endif; ?>
 
-				<div class="WPISTIC_CF-form-row">
-					<label class="WPISTIC_CF-field">
+				<div class="wpistic-formistic-form-row">
+					<label class="wpistic-formistic-field">
 						<span><?php esc_html_e( 'Your Name', 'formistic' ); ?> *</span>
-						<input type="text" name="WPISTIC_CF_name" required>
+						<input type="text" name="wpistic_formistic_name" required>
 					</label>
-					<label class="WPISTIC_CF-field">
+					<label class="wpistic-formistic-field">
 						<span><?php esc_html_e( 'Email Address', 'formistic' ); ?> *</span>
-						<input type="email" name="WPISTIC_CF_email" required>
+						<input type="email" name="wpistic_formistic_email" required>
 					</label>
 				</div>
-				<div class="WPISTIC_CF-form-row">
-					<label class="WPISTIC_CF-field">
+				<div class="wpistic-formistic-form-row">
+					<label class="wpistic-formistic-field">
 						<span><?php esc_html_e( 'Phone', 'formistic' ); ?></span>
-						<input type="text" name="WPISTIC_CF_phone">
+						<input type="text" name="wpistic_formistic_phone">
 					</label>
-					<label class="WPISTIC_CF-field">
+					<label class="wpistic-formistic-field">
 						<span><?php esc_html_e( 'Subject', 'formistic' ); ?></span>
-						<input type="text" name="WPISTIC_CF_subject">
+						<input type="text" name="wpistic_formistic_subject">
 					</label>
 				</div>
-				<label class="WPISTIC_CF-field">
+				<label class="wpistic-formistic-field">
 					<span><?php esc_html_e( 'Message', 'formistic' ); ?> *</span>
-					<textarea name="WPISTIC_CF_message" rows="6" required></textarea>
+					<textarea name="wpistic_formistic_message" rows="6" required></textarea>
 				</label>
 
 				<?php if ( $show_upload ) :
-					$exts = WPISTIC_CF_Attachments::allowed_extensions();
-					$max  = (int) get_option( 'WPISTIC_CF_att_max_size_mb', 5 );
+					$exts = Wpistic_Formistic_Attachments::allowed_extensions();
+					$max  = (int) get_option( 'wpistic_formistic_att_max_size_mb', 5 );
 					$accept = $exts ? implode( ',', array_map( function ( $e ) { return '.' . $e; }, $exts ) ) : '';
 					?>
-					<label class="WPISTIC_CF-field WPISTIC_CF-field--file">
+					<label class="wpistic-formistic-field wpistic-formistic-field--file">
 						<span><?php esc_html_e( 'Attachments', 'formistic' ); ?></span>
-						<input type="file" name="WPISTIC_CF_files[]" multiple<?php if ( $accept ) echo ' accept="' . esc_attr( $accept ) . '"'; ?>>
-						<small class="WPISTIC_CF-field__help">
+						<input type="file" name="wpistic_formistic_files[]" multiple<?php if ( $accept ) echo ' accept="' . esc_attr( $accept ) . '"'; ?>>
+						<small class="wpistic-formistic-field__help">
 							<?php
 							/* translators: 1: comma list of file extensions, 2: max size in MB */
 							printf( esc_html__( 'Allowed: %1$s · Max %2$d MB per file', 'formistic' ), esc_html( implode( ', ', $exts ) ?: __( 'any', 'formistic' ) ), (int) $max );
@@ -146,19 +146,19 @@ class WPISTIC_CF_Shortcode {
 					</label>
 				<?php endif; ?>
 
-				<?php if ( class_exists( 'WPISTIC_CF_Gdpr' ) && WPISTIC_CF_Gdpr::consent_enabled() ) : ?>
-					<label class="WPISTIC_CF-consent">
-						<input type="checkbox" name="WPISTIC_CF_consent" value="1"<?php echo WPISTIC_CF_Gdpr::consent_required() ? ' required' : ''; ?>>
-						<span><?php echo esc_html( WPISTIC_CF_Gdpr::consent_text() ); ?><?php echo WPISTIC_CF_Gdpr::consent_required() ? ' *' : ''; ?></span>
+				<?php if ( class_exists( 'Wpistic_Formistic_Gdpr' ) && Wpistic_Formistic_Gdpr::consent_enabled() ) : ?>
+					<label class="wpistic-formistic-consent">
+						<input type="checkbox" name="wpistic_formistic_consent" value="1"<?php echo Wpistic_Formistic_Gdpr::consent_required() ? ' required' : ''; ?>>
+						<span><?php echo esc_html( Wpistic_Formistic_Gdpr::consent_text() ); ?><?php echo Wpistic_Formistic_Gdpr::consent_required() ? ' *' : ''; ?></span>
 					</label>
 				<?php endif; ?>
 
-				<?php if ( class_exists( 'WPISTIC_CF_Spam' ) ) {
-					WPISTIC_CF_Spam::print_turnstile_field();
-					WPISTIC_CF_Spam::print_recaptcha_field();
+				<?php if ( class_exists( 'Wpistic_Formistic_Spam' ) ) {
+					Wpistic_Formistic_Spam::print_turnstile_field();
+					Wpistic_Formistic_Spam::print_recaptcha_field();
 				} ?>
 
-				<button type="submit" class="WPISTIC_CF-form-submit"><?php echo esc_html( $atts['button'] ); ?></button>
+				<button type="submit" class="wpistic-formistic-form-submit"><?php echo esc_html( $atts['button'] ); ?></button>
 			</form>
 		</div>
 		<?php
@@ -172,45 +172,45 @@ class WPISTIC_CF_Shortcode {
 		$back = wp_get_referer() ?: home_url( '/' );
 
 		// Honeypot — silently drop bots.
-		if ( ! empty( $_POST['WPISTIC_CF_hp'] ) ) {
+		if ( ! empty( $_POST['wpistic_formistic_hp'] ) ) {
 			wp_safe_redirect( $back );
 			exit;
 		}
 
-		$nonce = isset( $_POST['WPISTIC_CF_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['WPISTIC_CF_nonce'] ) ) : '';
-		if ( ! wp_verify_nonce( $nonce, 'WPISTIC_CF_submit' ) ) {
+		$nonce = isset( $_POST['wpistic_formistic_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['wpistic_formistic_nonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'wpistic_formistic_submit' ) ) {
 			$this->redirect_back( $back, 'error' );
 		}
 
 		// CAPTCHA pre-checks (only if configured & enabled).
-		if ( class_exists( 'WPISTIC_CF_Spam' ) ) {
-			$r1 = WPISTIC_CF_Spam::verify_recaptcha();
+		if ( class_exists( 'Wpistic_Formistic_Spam' ) ) {
+			$r1 = Wpistic_Formistic_Spam::verify_recaptcha();
 			if ( is_wp_error( $r1 ) ) {
 				$this->redirect_back( $back, 'spam' );
 			}
-			$r2 = WPISTIC_CF_Spam::verify_turnstile();
+			$r2 = Wpistic_Formistic_Spam::verify_turnstile();
 			if ( is_wp_error( $r2 ) ) {
 				$this->redirect_back( $back, 'spam' );
 			}
 		}
 
-		$form_name = isset( $_POST['WPISTIC_CF_form_name'] )
-			? sanitize_text_field( wp_unslash( $_POST['WPISTIC_CF_form_name'] ) )
+		$form_name = isset( $_POST['wpistic_formistic_form_name'] )
+			? sanitize_text_field( wp_unslash( $_POST['wpistic_formistic_form_name'] ) )
 			: __( 'Contact Form', 'formistic' );
 
 		$fields = [];
 		$map    = [
-			'WPISTIC_CF_name'    => __( 'Name', 'formistic' ),
-			'WPISTIC_CF_email'   => __( 'Email', 'formistic' ),
-			'WPISTIC_CF_phone'   => __( 'Phone', 'formistic' ),
-			'WPISTIC_CF_subject' => __( 'Subject', 'formistic' ),
-			'WPISTIC_CF_message' => __( 'Message', 'formistic' ),
+			'wpistic_formistic_name'    => __( 'Name', 'formistic' ),
+			'wpistic_formistic_email'   => __( 'Email', 'formistic' ),
+			'wpistic_formistic_phone'   => __( 'Phone', 'formistic' ),
+			'wpistic_formistic_subject' => __( 'Subject', 'formistic' ),
+			'wpistic_formistic_message' => __( 'Message', 'formistic' ),
 		];
 		foreach ( $map as $key => $label ) {
 			if ( ! isset( $_POST[ $key ] ) ) {
 				continue;
 			}
-			$value = ( 'WPISTIC_CF_message' === $key )
+			$value = ( 'wpistic_formistic_message' === $key )
 				? sanitize_textarea_field( wp_unslash( $_POST[ $key ] ) )
 				: sanitize_text_field( wp_unslash( $_POST[ $key ] ) );
 			if ( '' !== trim( $value ) ) {
@@ -233,17 +233,17 @@ class WPISTIC_CF_Shortcode {
 		}
 
 		// GDPR consent — if enabled & required, the box must be ticked.
-		if ( class_exists( 'WPISTIC_CF_Gdpr' ) && WPISTIC_CF_Gdpr::consent_enabled() ) {
-			$ticked = ! empty( $_POST['WPISTIC_CF_consent'] );
-			if ( WPISTIC_CF_Gdpr::consent_required() && ! $ticked ) {
+		if ( class_exists( 'Wpistic_Formistic_Gdpr' ) && Wpistic_Formistic_Gdpr::consent_enabled() ) {
+			$ticked = ! empty( $_POST['wpistic_formistic_consent'] );
+			if ( Wpistic_Formistic_Gdpr::consent_required() && ! $ticked ) {
 				$this->redirect_back( $back, 'consent' );
 			}
 			$fields[ __( 'Consent', 'formistic' ) ] = $ticked
-				? WPISTIC_CF_Gdpr::consent_record_value()
+				? Wpistic_Formistic_Gdpr::consent_record_value()
 				: __( 'No (optional, declined)', 'formistic' );
 		}
 
-		$capture = new WPISTIC_CF_Capture();
+		$capture = new Wpistic_Formistic_Capture();
 		$id      = $capture->store( $form_name, $fields );
 
 		if ( ! $id ) {
@@ -252,8 +252,8 @@ class WPISTIC_CF_Shortcode {
 		}
 
 		// Handle uploaded files (after the submission row exists).
-		if ( class_exists( 'WPISTIC_CF_Attachments' ) && WPISTIC_CF_Attachments::enabled() && ! empty( $_FILES['WPISTIC_CF_files'] ) ) {
-			$result = WPISTIC_CF_Attachments::ingest_post_files( 'WPISTIC_CF_files', $id );
+		if ( class_exists( 'Wpistic_Formistic_Attachments' ) && Wpistic_Formistic_Attachments::enabled() && ! empty( $_FILES['wpistic_formistic_files'] ) ) {
+			$result = Wpistic_Formistic_Attachments::ingest_post_files( 'wpistic_formistic_files', $id );
 			if ( ! empty( $result['errors'] ) && empty( $result['stored'] ) ) {
 				$this->redirect_back( $back, 'upload' );
 			}
@@ -269,7 +269,7 @@ class WPISTIC_CF_Shortcode {
 	 * @param string $status One of: 1 | error | spam | rate | upload.
 	 */
 	protected function redirect_back( $back, $status ) {
-		$url = add_query_arg( 'WPISTIC_CF_sent', $status, remove_query_arg( 'WPISTIC_CF_sent', $back ) ) . '#WPISTIC_CF';
+		$url = add_query_arg( 'wpistic_formistic_sent', $status, remove_query_arg( 'wpistic_formistic_sent', $back ) ) . '#Wpistic_Formistic';
 		wp_safe_redirect( $url );
 		exit;
 	}
