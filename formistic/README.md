@@ -127,6 +127,65 @@ Formistic ships an optional AI layer with **no paid lock-in**:
 | `[wpistic_form id="N"]` | Render a custom form built on the Forms screen |
 | `[wpistic_formistic_newsletter]` | Render a newsletter sign-up field anywhere |
 
+## Connect your existing forms
+
+Already have a custom contact form or newsletter sign-up (hand-coded, a theme
+form, or another plugin)? You don't have to rebuild it — point it at Formistic
+with whichever method fits your setup.
+
+### 1. No code — catch any form that emails you
+
+If your form sends you an email when someone submits it (most do), enable the
+catch-all:
+
+**Formistic → Addons → Form Captures (on) → Settings → Captures → "Any form that
+sends email (catch-all)".**
+
+Every email WordPress sends is then copied into the Inbox. Works with any form,
+no editing required. (It also catches non-form emails like password resets, so
+review the Inbox accordingly.)
+
+Built-in integrations for **Contact Form 7, WPForms, Gravity Forms, and Fluent
+Forms** are also on the same Captures screen — no code needed for those.
+
+### 2. One line of PHP — send submissions from your own handler
+
+In your form's submit handler, hand Formistic the fields. Sender name, email,
+phone, and message are detected automatically from the labels:
+
+```php
+// Contact form → Inbox
+formistic_capture_contact( array(
+    'Name'    => $_POST['name'],
+    'Email'   => $_POST['email'],
+    'Message' => $_POST['message'],
+), array( 'form_name' => 'My Contact Form' ) );
+
+// Newsletter sign-up → Newsletter list
+formistic_add_subscriber( $_POST['email'], 'footer-form' );
+```
+
+Prefer hooks? These do the same thing:
+
+```php
+do_action( 'formistic_capture', array( 'Email' => $email, 'Message' => $msg ) );
+do_action( 'formistic_subscribe', $email );
+```
+
+### 3. REST API — for JavaScript / headless / external systems
+
+```
+POST /wp-json/formistic/v1/capture      { "form_name": "...", "fields": { "Email": "...", "Message": "..." } }
+POST /wp-json/formistic/v1/newsletter    { "email": "...", "source": "..." }
+```
+
+Send the WordPress REST nonce as the `X-WP-Nonce` header (from
+`wp_create_nonce('wp_rest')`) for same-site requests.
+
+> Contact submissions land in the **Inbox**; newsletter sign-ups land in the
+> **Newsletter** list (enable the Newsletter addon to view them). The spam
+> stack still applies when the Spam Protection addon is on.
+
 ## External services
 
 Formistic only contacts third-party services when you explicitly enable them

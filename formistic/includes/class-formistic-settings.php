@@ -402,10 +402,23 @@ class Wpistic_Formistic_Settings {
 			'wpistic_formistic_capture_gform'   => [ __( 'Gravity Forms',     'formistic' ), '1', __( 'Capture submissions completed in Gravity Forms.', 'formistic' ) ],
 			'wpistic_formistic_capture_fluent'  => [ __( 'Fluent Forms',      'formistic' ), '1', __( 'Capture submissions stored by Fluent Forms.', 'formistic' ) ],
 			'wpistic_formistic_capture_g2a'     => [ __( 'G2A Theme', 'formistic' ), '1', __( 'Capture theme-bundled g2a_request / g2a_reservation form handlers.', 'formistic' ) ],
-			'wpistic_formistic_capture_wpmail'  => [ __( 'wp_mail intercept', 'formistic' ), '0', __( 'Catch-all: record a snapshot of any outgoing email triggered by a form submission. Use with care — also captures non-form site emails (password resets, comment notifications, etc).', 'formistic' ) ],
+			'wpistic_formistic_capture_wpmail'  => [ __( 'Any form that sends email (catch-all)', 'formistic' ), '0', __( 'Works with ANY contact form — including your own custom forms — as long as it emails you on submit. Records a copy of every email WordPress sends. Use with care: it also catches non-form site emails (password resets, comment notifications, etc).', 'formistic' ) ],
 		];
 		?>
 		<p class="description" style="margin-top:0;"><?php esc_html_e( 'Toggle which form sources Formistic should monitor. Disabled hooks add zero overhead.', 'formistic' ); ?></p>
+		<div class="wpistic-formistic-panel" style="padding:14px 16px;margin:12px 0;">
+			<strong><?php esc_html_e( 'Using your own custom contact or newsletter form?', 'formistic' ); ?></strong>
+			<p style="margin:6px 0 0;">
+				<?php esc_html_e( 'Easiest: turn on "Any form that sends email (catch-all)" below — it collects any form that emails you, including hand-built ones.', 'formistic' ); ?>
+			</p>
+			<p style="margin:6px 0 0;">
+				<?php esc_html_e( 'Developers can push submissions from a custom handler:', 'formistic' ); ?>
+				<code>formistic_capture_contact( [ 'Email' =&gt; $e, 'Message' =&gt; $m ] );</code>
+				<?php esc_html_e( 'or', 'formistic' ); ?>
+				<code>formistic_add_subscriber( $email );</code>
+				<?php esc_html_e( 'A REST endpoint (/wp-json/formistic/v1/capture) is also available for JavaScript forms.', 'formistic' ); ?>
+			</p>
+		</div>
 		<table class="form-table" role="presentation">
 			<?php foreach ( $rows as $key => $row ) : ?>
 				<tr>
