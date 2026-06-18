@@ -4,7 +4,7 @@ Tags: contact form, form builder, wordpress, submissions, inbox, ai, spam protec
 Requires at least: 6.2
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.0.4
+Stable tag: 2.0.5
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -105,6 +105,9 @@ This plugin can connect to third-party services when enabled by the site adminis
 * Terms/Privacy: Depends on selected provider.
 
 == Changelog ==
+
+= 2.0.5 =
+* Fix: the Inbox action buttons (View, Reply, Delete, notes, bulk actions) did nothing on sites where a JavaScript optimizer / deferral plugin broke the external admin script. The admin script is now printed inline (after its localized data), so the dashboard controls always work.
 
 = 2.0.4 =
 * Fix: admin dashboard styles are now printed inline, so the branded design always renders even when a CSS optimizer, concatenation/minification plugin, CDN, or aggressive cache would otherwise strip or stale the external stylesheet.
