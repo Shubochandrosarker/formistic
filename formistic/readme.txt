@@ -4,7 +4,7 @@ Tags: contact form, form builder, wordpress, submissions, inbox, ai, spam protec
 Requires at least: 6.2
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.0.3
+Stable tag: 2.0.4
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -105,6 +105,11 @@ This plugin can connect to third-party services when enabled by the site adminis
 * Terms/Privacy: Depends on selected provider.
 
 == Changelog ==
+
+= 2.0.4 =
+* Fix: admin dashboard styles are now printed inline, so the branded design always renders even when a CSS optimizer, concatenation/minification plugin, CDN, or aggressive cache would otherwise strip or stale the external stylesheet.
+* New: duplicate-submission protection — an identical submission captured within a short window (double-click, refresh, or the same payload arriving via two hooks) resolves to the original entry instead of creating a duplicate. Window is filterable via `wpistic_formistic_dedupe_seconds`.
+* Newsletter sign-ups remain de-duplicated by unique email, and auto-responder emails remain per-recipient throttled.
 
 = 2.0.3 =
 * New: connect ANY existing form (custom contact forms, custom newsletter sign-ups, theme forms, or other plugins) to the Formistic dashboard.

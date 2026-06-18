@@ -194,6 +194,21 @@ class Wpistic_Formistic_Admin {
 	}
 
 	/**
+	 * Read the admin stylesheet once for inline output.
+	 *
+	 * @return string CSS contents, or '' if unreadable.
+	 */
+	protected static function inline_css() {
+		static $css = null;
+		if ( null !== $css ) {
+			return $css;
+		}
+		$file = WPISTIC_FORMISTIC_PATH . 'assets/admin.css';
+		$css  = is_readable( $file ) ? (string) file_get_contents( $file ) : ''; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		return $css;
+	}
+
+	/**
 	 * Enqueue admin assets on plugin pages only.
 	 *
 	 * @param string $hook Current admin page hook.
@@ -211,7 +226,18 @@ class Wpistic_Formistic_Admin {
 		if ( ! $is_plugin_page && ! $is_form_screen ) {
 			return;
 		}
-		wp_enqueue_style( 'wpistic-formistic-admin', WPISTIC_FORMISTIC_URL . 'assets/admin.css', [], WPISTIC_FORMISTIC_VERSION );
+		// Print the admin CSS inline (registered with no external src) so it is
+		// immune to CSS optimizers, concatenation, stale caches, CDNs and CSP —
+		// the dashboard chrome always renders. Falls back to the file if the
+		// contents can't be read.
+		$css = self::inline_css();
+		if ( '' !== $css ) {
+			wp_register_style( 'wpistic-formistic-admin', false, [], WPISTIC_FORMISTIC_VERSION );
+			wp_enqueue_style( 'wpistic-formistic-admin' );
+			wp_add_inline_style( 'wpistic-formistic-admin', $css );
+		} else {
+			wp_enqueue_style( 'wpistic-formistic-admin', WPISTIC_FORMISTIC_URL . 'assets/admin.css', [], WPISTIC_FORMISTIC_VERSION );
+		}
 		wp_enqueue_script( 'wpistic-formistic-admin', WPISTIC_FORMISTIC_URL . 'assets/admin.js', [], WPISTIC_FORMISTIC_VERSION, true );
 		wp_localize_script(
 			'wpistic-formistic-admin',
